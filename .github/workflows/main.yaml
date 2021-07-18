@@ -336,9 +336,13 @@ jobs:
         #with:
           #name: ${{ env.signal-cli-build-artifact }}
 
-      - name: DEBUG Download OLD artifacts
-        run: |
-          wget https://github.com/${{ github.repository }}/suites/3266111041/artifacts/76029029
+      - name: DEBUG download old artifact(s)
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: main
+          run_id: 1041864246
+          name: ${{ env.signal-cli-build-artifact }}
 
       - name: Download the compiled libs from release assets
         # In a public repo can simply wget/curl from a browser_download_url, no need for API and GITHUB_TOKEN. This is a more general approach (works in private repos also).

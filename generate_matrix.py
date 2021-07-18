@@ -33,11 +33,11 @@ hosts = {
         }
 
 cross_targets = [
-        {
-            "target": "aarch64-unknown-linux-gnu",
-            "req-pkg": "gcc-aarch64-linux-gnu",
-            "linker": "aarch64-linux-gnu-gcc",
-        },
+        #{
+            #"target": "aarch64-unknown-linux-gnu",
+            #"req-pkg": "gcc-aarch64-linux-gnu",
+            #"linker": "aarch64-linux-gnu-gcc",
+        #},
         #{
             #"target": "armv7-unknown-linux-gnueabihf",
             #"req-pkg": "gcc-arm-linux-gnueabihf",
