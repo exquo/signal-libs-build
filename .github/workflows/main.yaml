@@ -458,8 +458,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.check-new-release.outputs.release-upload-url }}
-          asset_path: ${{ steps.filenames.outputs.archive_name }}.tar.gz
-          asset_name: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_path: ${{ steps.archive.outputs.archive_name }}.tar.gz
+          asset_name: ${{ steps.archive.outputs.archive_name }}.tar.gz
           asset_content_type: application/x-compressed-tar  # .tar.gz
 
 
