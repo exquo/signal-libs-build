@@ -24,6 +24,7 @@ jobs:
     outputs:
       signal-cli-version: ${{ steps.check-signal-cli.outputs.SIGNAL_CLI_VERSION }}
       is-new-version: ${{ steps.compare-versions.outputs.IS_NEW_VERSION }}
+      release-upload-url: ${{ steps.create-release.outputs.upload_url }}
 
     steps:
 
@@ -51,6 +52,16 @@ jobs:
         env:
           IS_NEW_VERSION: ${{ steps.check-signal-cli.outputs.SIGNAL_CLI_VERSION != steps.check-this-repo.outputs.THIS_REPO_VERSION }}
 
+      - name: Create new release
+        id: create-release
+        if: ${{ fromJSON(steps.compare-versions.outputs.IS_NEW_VERSION) }}  # str to bool
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.check-signal-cli.outputs.SIGNAL_CLI_VERSION }}
+          body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
 
 
   signal-cli-build:
@@ -68,60 +79,62 @@ jobs:
       # Ref:
         #https://github.com/AsamK/signal-cli/blob/master/.github/workflows/ci.yml
 
-      - name: Checkout source with git
-        uses: actions/checkout@v2
-        with:
-          repository: AsamK/signal-cli
-          ref: ${{ needs.check-new-release.outputs.signal-cli-version }}
-
-      - name: Set up JDK
-        uses: actions/setup-java@v1
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Cache Gradle stuff
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-gradle
-        with:
-          path: |
-            ~/.gradle
-            ./.gradle
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.JAVA_VERSION }}-${{ hashFiles('graalvm-config-dir') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.JAVA_VERSION }}-
-
-      - name: Gradle build
-        run: ./gradlew build
-
-      - name: Create shell wrapper in `build/install/signal-cli/bin`
-        run: ./gradlew installDist
-
-      - name: Test signal-cli binary
-        run: |
-          ./signal-cli -v
-        working-directory: build/install/signal-cli/bin
-
-      #- name: Create tar file in build/distributions
-        # Isn't needed, the .tar file is already created
-        #run: ./gradlew distTar
-
-      - name: Upload the built archive
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ env.signal-cli-build-artifact }}
-          path: build/distributions/signal-cli-*.tar
+      #- name: Checkout source with git
+        #uses: actions/checkout@v2
+        #with:
+          #repository: AsamK/signal-cli
+          #ref: ${{ needs.check-new-release.outputs.signal-cli-version }}
+#
+      #- name: Set up JDK
+        #uses: actions/setup-java@v1
+        #with:
+          #java-version: ${{ env.JAVA_VERSION }}
+#
+      #- name: Cache Gradle stuff
+        #uses: actions/cache@v2
+        #env:
+          #cache-name: cache-gradle
+        #with:
+          #path: |
+            #~/.gradle
+            #./.gradle
+          #key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.JAVA_VERSION }}-${{ hashFiles('graalvm-config-dir') }}
+          #restore-keys: |
+            #${{ runner.os }}-build-${{ env.cache-name }}-${{ env.JAVA_VERSION }}-
+#
+      #- name: Gradle build
+        #run: ./gradlew build
+#
+      #- name: Create shell wrapper in `build/install/signal-cli/bin`
+        #run: ./gradlew installDist
+#
+      #- name: Test signal-cli binary
+        #run: |
+          #./signal-cli -v
+        #working-directory: build/install/signal-cli/bin
+#
+      ##- name: Create tar file in build/distributions
+        ## Isn't needed, the .tar file is already created
+        ##run: ./gradlew distTar
+#
+      #- name: Upload the built archive
+        #uses: actions/upload-artifact@v2
+        #with:
+          #name: ${{ env.signal-cli-build-artifact }}
+          #path: build/distributions/signal-cli-*.tar
 
       - name: Print version nums of native signal libs dependencies
         id: native-lib-version
         run: |
-          find_lib_version() {
-            find ./build/install/signal-cli/lib/ -name "$1*.jar" | xargs basename | sed "s/$1//; s/.jar//"
-          }
-          ZKGROUP_VERSION=$(find_lib_version $ZKGROUP_JAR_PREFIX)
-          echo "::set-output name=zkgroup::v$ZKGROUP_VERSION" # Note: added "v"
-          LIBCLIENT_VERSION=$(find_lib_version $LIBCLIENT_JAR_PREFIX)
-          echo "::set-output name=libclient::v$LIBCLIENT_VERSION"
+          #find_lib_version() {
+            #find ./build/install/signal-cli/lib/ -name "$1*.jar" | xargs basename | sed "s/$1//; s/.jar//"
+          #}
+          #ZKGROUP_VERSION=$(find_lib_version $ZKGROUP_JAR_PREFIX)
+          #echo "::set-output name=zkgroup::v$ZKGROUP_VERSION" # Note: added "v"
+          #LIBCLIENT_VERSION=$(find_lib_version $LIBCLIENT_JAR_PREFIX)
+          #echo "::set-output name=libclient::v$LIBCLIENT_VERSION"
+          echo "::set-output name=zkgroup::v0.7.0" # Note: added "v"
+          echo "::set-output name=libclient::v0.8.1"
 
 
 
@@ -177,67 +190,74 @@ jobs:
         id: filenames
         run: python3 filename_for_matrix_item.py '${{ needs.matrix-setup.outputs.matrix }}' ${{ matrix.lib.name }} ${{ matrix.host.runner }} ${{ matrix.cross.target }}
 
-      - name: Checkout source with git
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ matrix.lib.repo }}
-          ref: ${{ matrix.lib.ref }}
+      #- name: Checkout source with git
+        #uses: actions/checkout@v2
+        #with:
+          #repository: ${{ matrix.lib.repo }}
+          #ref: ${{ matrix.lib.ref }}
+#
+      #- name: Install Rust toolchain
+        #uses: actions-rs/toolchain@v1
+        #with:
+          #profile: minimal
+#
+      #- name: Add target to rust toolchain
+        #if: ${{ matrix.cross.target }}
+        #run: rustup target add $TARGET
+#
+      #- name: Install C cross toolchain
+        #if: ${{ matrix.cross.req-pkg }}
+        #run: |
+          #sudo apt-get update
+          #sudo apt-get install $APT_PKGS
+        #env:
+          #APT_PKGS: ${{ matrix.cross.req-pkg }}
+#
+      #- name: Add linker to cargo config
+        ## Alternatively can add to rust flags
+          ##RUSTFLAGS: -C linker=${{ matrix.cross.linker }}
+        #if: ${{ matrix.cross.linker }}
+        #run: |
+          #cat >>~/.cargo/config <<EOF
+          #[target.$TARGET]
+          #linker = "$LINKER"
+          #EOF
+        #env:
+          #LINKER: ${{ matrix.cross.linker }}
+#
+      #- name: Setup rust cache
+        ## Cache action fails on macos-latest
+          ## https://github.com/actions/cache/issues/403
+          ## https://github.com/rust-lang/cargo/issues/8603
+          ## https://github.com/Swatinem/rust-cache
+        #uses: actions/cache@v2
+        #env:
+          #cache-name: cache-rust
+        #with:
+          #path: |
+            #~/.cargo
+            #./target
+          #key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
+          #restore-keys: |
+            #${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-
+            #${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-
+#
+      #- name: Cargo build
+        #run: |
+          #if [[ -n $TARGET ]]; then
+            #export CARGO_BUILD_TARGET=$TARGET
+          #fi
+          #cargo build --release --verbose  $CARGO_FLAGS
+        #env:
+          #RUSTFLAGS: -C link-arg=-s  ${{ matrix.host.rust-flags }} ${{ matrix.cross.rust-flags }}
+          #CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-
-      - name: Add target to rust toolchain
-        if: ${{ matrix.cross.target }}
-        run: rustup target add $TARGET
-
-      - name: Install C cross toolchain
-        if: ${{ matrix.cross.req-pkg }}
+      - name: DEBUG dummy built file
         run: |
-          sudo apt-get update
-          sudo apt-get install $APT_PKGS
+          echo test > $FILENAME
         env:
-          APT_PKGS: ${{ matrix.cross.req-pkg }}
-
-      - name: Add linker to cargo config
-        # Alternatively can add to rust flags
-          #RUSTFLAGS: -C linker=${{ matrix.cross.linker }}
-        if: ${{ matrix.cross.linker }}
-        run: |
-          cat >>~/.cargo/config <<EOF
-          [target.$TARGET]
-          linker = "$LINKER"
-          EOF
-        env:
-          LINKER: ${{ matrix.cross.linker }}
-
-      - name: Setup rust cache
-        # Cache action fails on macos-latest
-          # https://github.com/actions/cache/issues/403
-          # https://github.com/rust-lang/cargo/issues/8603
-          # https://github.com/Swatinem/rust-cache
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-rust
-        with:
-          path: |
-            ~/.cargo
-            ./target
-          key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-
-
-      - name: Cargo build
-        run: |
-          if [[ -n $TARGET ]]; then
-            export CARGO_BUILD_TARGET=$TARGET
-          fi
-          cargo build --release --verbose  $CARGO_FLAGS
-        env:
-          RUSTFLAGS: -C link-arg=-s  ${{ matrix.host.rust-flags }} ${{ matrix.cross.rust-flags }}
-          CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
+          FILENAME: ${{ steps.filenames.outputs.lib_filename }}
+        working-directory: target/${{ matrix.cross.target }}/release
 
       - name: Inspect built file
         run: |
@@ -256,15 +276,24 @@ jobs:
           FILENAME: ${{ steps.filenames.outputs.lib_filename }}
           ARCHIVE_NAME: ${{ steps.filenames.outputs.archive_name }}
 
-      - name: Add file to release assets
-        uses: svenstaro/upload-release-action@v2    # This action is what zkgroup uses in its workflow
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ steps.filenames.outputs.archive_name }}.tar.gz
-          tag:  ${{ needs.check-new-release.outputs.signal-cli-version }}
-          body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          overwrite: true
+      #- name: Add file to release assets
+        #uses: svenstaro/upload-release-action@v2    # This action is what zkgroup uses in its workflow
+        #with:
+          #repo_token: ${{ secrets.GITHUB_TOKEN }}
+          #file: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          #tag:  ${{ needs.check-new-release.outputs.signal-cli-version }}
+          #body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          #overwrite: true
 
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.check-new-release.outputs.release-upload-url }}
+          asset_path: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_name: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
 
 
   repackage-signal-cli:
@@ -299,10 +328,14 @@ jobs:
       - name: Delete repo files
         run: rm -rf ./*
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ env.signal-cli-build-artifact }}
+      #- name: Download artifacts
+        #uses: actions/download-artifact@v2
+        #with:
+          #name: ${{ env.signal-cli-build-artifact }}
+
+      - name: DEBUG Download OLD artifacts
+        run: |
+          wget https://github.com/${{ github.repository }}/suites/3266111041/artifacts/76029029
 
       - name: Download the compiled libs from release assets
         # In a public repo can simply wget/curl from a browser_download_url, no need for API and GITHUB_TOKEN. This is a more general approach (works in private repos also).
@@ -402,12 +435,23 @@ jobs:
           OS: x86_64-${{ runner.os }}
           SIGNAL_CLI_VERSION: ${{ needs.check-new-release.outputs.signal-cli-version }}
 
-      - name: Add repackaged signal-cli to release assets
-        uses: svenstaro/upload-release-action@v2
+      #- name: Add repackaged signal-cli to release assets
+        #uses: svenstaro/upload-release-action@v2
+        #with:
+          #repo_token: ${{ secrets.GITHUB_TOKEN }}
+          #file: ${{ steps.archive.outputs.archive_name }}.tar.gz
+          #tag:  ${{ needs.check-new-release.outputs.signal-cli-version }}
+          #body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          #overwrite: true
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ steps.archive.outputs.archive_name }}.tar.gz
-          tag:  ${{ needs.check-new-release.outputs.signal-cli-version }}
-          body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          overwrite: true
+          upload_url: ${{ needs.check-new-release.outputs.release-upload-url }}
+          asset_path: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_name: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
+
 
