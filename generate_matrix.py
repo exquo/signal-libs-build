@@ -58,14 +58,13 @@ matrix = {
                 "repo": "signalapp/zkgroup",
                 "ref": zkgroup_version,
                 "filename": "zkgroup",
-                "cargo-flags": "--verbose",
             },
             {
                 "name": "libclient",
                 "repo": "signalapp/libsignal-client",
                 "ref": libclient_version,
                 "filename": "signal_jni",
-                "cargo-flags": "-p libsignal-jni  --verbose",
+                "cargo-flags": "-p libsignal-jni",
             },
         ],
         "host": [

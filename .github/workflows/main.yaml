@@ -234,7 +234,7 @@ jobs:
           if [[ -n $TARGET ]]; then
             export CARGO_BUILD_TARGET=$TARGET
           fi
-          cargo build --release  $CARGO_FLAGS
+          cargo build --release --verbose  $CARGO_FLAGS
         env:
           RUSTFLAGS: -C link-arg=-s  ${{ matrix.host.rust-flags }} ${{ matrix.cross.rust-flags }}
           CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
