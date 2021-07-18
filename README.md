@@ -59,3 +59,8 @@ Suggestions for additional platforms are welcome - feel free to open an issue!
 ### Similar projects
 
 - https://gitlab.com/signald/libraries/zkgroup 
+
+Manual builds for Raspberry Pi:
+
+- https://github.com/DutchForeigner/signal-cli_rpi
+- https://github.com/bublath/FHEM-Signalbot/tree/main/armv7l
