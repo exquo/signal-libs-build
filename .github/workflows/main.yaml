@@ -24,6 +24,7 @@ jobs:
     outputs:
       signal-cli-version: ${{ steps.check-signal-cli.outputs.SIGNAL_CLI_VERSION }}
       is-new-version: ${{ steps.compare-versions.outputs.IS_NEW_VERSION }}
+      release-upload-url: ${{ steps.create-release.outputs.upload_url }}
 
     steps:
 
@@ -50,6 +51,16 @@ jobs:
           echo "::set-output name=IS_NEW_VERSION::$IS_NEW_VERSION"
         env:
           IS_NEW_VERSION: ${{ steps.check-signal-cli.outputs.SIGNAL_CLI_VERSION != steps.check-this-repo.outputs.THIS_REPO_VERSION }}
+
+      - name: Create new release
+        id: create-release
+        if: ${{ fromJSON(steps.compare-versions.outputs.IS_NEW_VERSION) }}  # str to bool
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.check-signal-cli.outputs.SIGNAL_CLI_VERSION }}
+          body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
 
 
@@ -256,14 +267,15 @@ jobs:
           FILENAME: ${{ steps.filenames.outputs.lib_filename }}
           ARCHIVE_NAME: ${{ steps.filenames.outputs.archive_name }}
 
-      - name: Add file to release assets
-        uses: svenstaro/upload-release-action@v2    # This action is what zkgroup uses in its workflow
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ steps.filenames.outputs.archive_name }}.tar.gz
-          tag:  ${{ needs.check-new-release.outputs.signal-cli-version }}
-          body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          overwrite: true
+          upload_url: ${{ needs.check-new-release.outputs.release-upload-url }}
+          asset_path: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_name: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
 
 
 
@@ -403,11 +415,11 @@ jobs:
           SIGNAL_CLI_VERSION: ${{ needs.check-new-release.outputs.signal-cli-version }}
 
       - name: Add repackaged signal-cli to release assets
-        uses: svenstaro/upload-release-action@v2
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ steps.archive.outputs.archive_name }}.tar.gz
-          tag:  ${{ needs.check-new-release.outputs.signal-cli-version }}
-          body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          overwrite: true
-
+          upload_url: ${{ needs.check-new-release.outputs.release-upload-url }}
+          asset_path: ${{ steps.archive.outputs.archive_name }}.tar.gz
+          asset_name: ${{ steps.archive.outputs.archive_name }}.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
