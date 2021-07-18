@@ -51,6 +51,7 @@ Tip: use `uname -m` to get your device's architecture.
 
 - `aarch64-apple-darwin`
 	MacOS ARM64 / M1
+	(see [#1](../../issues/1))
 
 Suggestions for additional platforms are welcome - feel free to open an issue!
 
