@@ -254,10 +254,13 @@ jobs:
 
       - name: DEBUG dummy built file
         run: |
+          mkdir -p $WORK_DIR
+          cd $WORK_DIR
           echo test > $FILENAME
         env:
           FILENAME: ${{ steps.filenames.outputs.lib_filename }}
-        working-directory: target/${{ matrix.cross.target }}/release
+          WORK_DIR: target/${{ matrix.cross.target }}/release
+
 
       - name: Inspect built file
         run: |
