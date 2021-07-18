@@ -33,21 +33,21 @@ hosts = {
         }
 
 cross_targets = [
-        #{
-            #"target": "armv7-unknown-linux-gnueabihf",
-            #"req-pkg": "gcc-arm-linux-gnueabihf",
-            #"linker": "arm-linux-gnueabihf-gcc",
-        #},
+        {
+            "target": "armv7-unknown-linux-gnueabihf",
+            "req-pkg": "gcc-arm-linux-gnueabihf",
+            "linker": "arm-linux-gnueabihf-gcc",
+        },
         {
             "target": "aarch64-unknown-linux-gnu",
             "req-pkg": "gcc-aarch64-linux-gnu",
             "linker": "aarch64-linux-gnu-gcc",
         },
-        #{
-            #"target": "i686-unknown-linux-gnu",
-            #"req-pkg": "gcc-i686-linux-gnu",
-            #"linker": "i686-linux-gnu-gcc",
-        #},
+        {
+            "target": "i686-unknown-linux-gnu",
+            "req-pkg": "gcc-i686-linux-gnu",
+            "linker": "i686-linux-gnu-gcc",
+        },
         ]
 
 
