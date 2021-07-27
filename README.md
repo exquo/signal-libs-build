@@ -9,9 +9,17 @@ Using signal-cli currently requires compiling them individually for a specific o
 
 ### How to use it
 
-For Linux, MacOS and Windows on x86_64 processors, the binaries are packaged into signal-cli. Simply download a [release](../../releases) for your platform and run it as usual.
+##### x86_64 processors
+For Linux, MacOS and Windows on x86_64 processors, the binaries are packaged into signal-cli. Simply download a [release](../../releases) for your platform and run it as usual. For instance, for signal-cli v0.8.4.1 on Windows, you only need the file `signal-cli-v0.8.4.1-x86_64-Windows.tar.gz`.
 
-For other architectures you will need to incorporate them into signal-cli according to the [instructions on its wiki](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal).
+##### Other architectures
+For other architectures you will need to incorporate the compiled library files into signal-cli according to the [instructions on its wiki](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal). For Linux, this amounts to swapping the `.so` files inside the `.jar` archives.
+For example, for an ARM64 version of signal-cli v0.8.4.1, download the following files: `signal-cli-v0.8.4.1-x86_64-Linux.tar.gz`, `libsignal_jni.so-v0.8.1-aarch64-unknown-linux-gnu.tar.gz`, `libzkgroup.so-v0.7.0-aarch64-unknown-linux-gnu.tar.gz` and unpack them with `tar -xzf ….tar.gz`. Then execute the following commands:
+
+	zip -uj signal-cli-<SIGNAL_CLI_VER>/lib/signal-client-java-<LIBCLIENT_VER>.jar  libsignal_jni.so
+	zip -uj signal-cli-<SIGNAL_CLI_VER>/lib/zkgroup-java-<ZKGROUP_VER>.jar  libzkgroup.so
+
+where substitute `<SIGNAL_CLI_VER>` with `v0.8.4.1`, `<LIBCLIENT_VER>` with `v0.7.0`, and `<ZKGROUP_VER>` with `v0.8.1`.
 
 
 ### How it works
