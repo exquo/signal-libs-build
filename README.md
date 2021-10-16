@@ -4,13 +4,13 @@ Automatic compilation of native libraries for the Signal messenger.
 
 This repo is a CI/CD workflow that uses GitHub Actions to automatically compile Signal's rust libraries [zkgroup](https://github.com/signalapp/zkgroup/) and [libsignal-client](https://github.com/signalapp/libsignal-client/). These libraries are required by the [libsignal-service-java (fork)](https://github.com/Turasa/libsignal-service-java/), which is in turn a dependency of [signal-cli](https://github.com/AsamK/signal-cli/). 
 
-Using signal-cli currently requires compiling them individually for a specific operating system and a processor architecture. This repo aims to simplify the installation by providing the pre-compiled binaries for most of the popular platforms (see [releases](../../releases) and [available platforms](#available-platforms) below). For x86_64 Linux, MacOS and Windows it also packages the compiled files into signal-cli, allowing to download and run it without manually swapping the library files.
+Using signal-cli currently requires compiling them individually for a specific operating system and a processor architecture. This repo aims to simplify the installation by providing the pre-compiled binaries for most of the popular platforms (see [available platforms](#available-platforms) below). For x86_64 Linux, MacOS and Windows it also packages the compiled files into signal-cli, allowing to download and run it without manually swapping the library files.
 
 
 ### How to use it
 
 ##### x86_64 processors
-For Linux, MacOS and Windows on x86_64 processors, the binaries are packaged into signal-cli. Simply download a [release](../../releases) for your platform and run it as usual. For instance, for signal-cli v0.8.4.1 on Windows, you only need the file `signal-cli-v0.8.4.1-x86_64-Windows.tar.gz`.
+For Linux, MacOS and Windows on x86_64 processors, the binaries are packaged into signal-cli. Simply download a `signal-cli_v…` [release](../../releases) for your platform and run it as usual. For instance, for signal-cli v0.8.4.1 on Windows, you only need the file `signal-cli-v0.8.4.1-x86_64-Windows.tar.gz`.
 
 ##### Other architectures
 For other architectures you will need to incorporate the compiled library files into signal-cli according to the [instructions on its wiki](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal). For Linux, this amounts to swapping the `.so` files inside the `.jar` archives.
@@ -28,9 +28,9 @@ The workflow automatically checks for the new signal-cli releases daily; if one 
 
 #### Security
 
-All the published files are compiled automatically by GitHub's CI infrastructure, following the steps in the [workflow file](.github/workflows/main.yaml). This can be verified by the "github-actions released this" line on the release's page (also visible with [GitHub API calls](https://docs.github.com/en/rest/reference/repos#get-the-latest-release)). Additionally, a SHA checksum is printed out during the workflow run for every compiled file.
+All the published files are compiled automatically by GitHub's CI infrastructure, following the steps in the [workflow files](.github/workflows). This can be verified by the "github-actions released this" line on the release's page (also visible with [GitHub API calls](https://docs.github.com/en/rest/reference/repos#get-the-latest-release)). Additionally, a SHA checksum is printed out during the workflow run for every compiled file.
 
-All this means that you can download and run the published binaries without having to put any trust in this repository: all the actions performed to produce the compiled files are done by GitHub, following the instructions in the workflow file whose source can be freely examined.
+All this means that you can download and run the published binaries with a confidence that they are exactly what has been produced by GitHub Actions by executing the instructions in the (open source) workflow files.
 
 
 ### Available platforms
@@ -38,7 +38,8 @@ All this means that you can download and run the published binaries without havi
 ##### Compiled libraries and bundled signal-cli:
 
 - `x86_64-linux-gnu`
-	Most desktop linuxes, including the ones with `glibc` older than that of Ubuntu 20.04 (see [signal-cli#643](https://github.com/AsamK/signal-cli/issues/643)). This includes Ubuntu 18.04, Debain 10 and CentOS 7.
+	Most desktop linuxes.
+	Works with `glibc` v2.18 and newer, so that Ubuntu 18.04, Debain 10 and CentOS 7 are supported. (Releases in signal-cli's own repo require a more recent `glibc` version, see [signal-cli#643](https://github.com/AsamK/signal-cli/issues/643))
 - `x86_64-apple-darwin`
 	MacOS, Intel 64 bit.
 - `x86_64-pc-windows`
@@ -46,12 +47,12 @@ All this means that you can download and run the published binaries without havi
 
 ##### Compiled libraries:
 
-- `i686-linux-gnu`
-	32 bit Linux.
-- `armv7-linux-gnueabihf`
-	Raspberry Pi 2; many SoC.
 - `aarch64-linux-gnu`
 	Raspberry Pi 3,4; Pine A64; many SoC.
+- `armv7-linux-gnueabihf`
+	Raspberry Pi 2; many SoC.
+- `i686-linux-gnu`
+	32 bit Linux.
 
 Tip: use `uname -m` to get your device's architecture.
 
