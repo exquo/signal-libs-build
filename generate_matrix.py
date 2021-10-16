@@ -5,8 +5,24 @@ import pprint
 import sys
 
 print(sys.argv)
-zkgroup_version = sys.argv[1]
-libclient_version = sys.argv[2]
+libs_ver = {}
+libs_ver["zkgroup"] = sys.argv[1]
+libs_ver["libclient"] = sys.argv[2]
+
+
+libs = {
+        "zkgroup": {
+            "repo": "signalapp/zkgroup",
+            "jar_name": "zkgroup-java",
+            "filename": "zkgroup",
+            },
+        "libclient": {
+            "repo": "signalapp/libsignal-client",
+            "jar_name": "signal-client-java",
+            "filename": "signal_jni",
+            "cargo-flags": "-p libsignal-jni",
+            },
+        }
 
 hosts = {
         "linux": {
@@ -52,31 +68,22 @@ cross_targets = [
 
 
 matrix = {
-        "lib": [
-            {
-                "name": "zkgroup",
-                "repo": "signalapp/zkgroup",
-                "ref": zkgroup_version,
-                "filename": "zkgroup",
-            },
-            {
-                "name": "libclient",
-                "repo": "signalapp/libsignal-client",
-                "ref": libclient_version,
-                "filename": "signal_jni",
-                "cargo-flags": "-p libsignal-jni",
-            },
-        ],
-        "host": [
-            hosts["linux"],
-            hosts["macos"],
-            hosts["windows"],
-        ],
+        "lib": [],
+        "host": [],
         "cross": [None],
-        "include": []
+        "include": [],
         }
 
 target_to_host = {"linux": "linux", "apple": "macos"}
+
+for lib_name, lib_dict in libs.items():
+    if not libs_ver[lib_name]:
+        continue
+    lib_dict["name"] = lib_name
+    lib_dict["ref"] = libs_ver[lib_name]
+    matrix["lib"].append(lib_dict)
+
+matrix["host"] = list(hosts.values())
 
 for cross in cross_targets:
     for lib in matrix["lib"]:
