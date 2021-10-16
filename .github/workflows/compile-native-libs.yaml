@@ -1,0 +1,296 @@
+name: compile-native-libs
+
+on:
+  workflow_dispatch:
+    inputs:
+      libsignal-service-ref:
+        description: The branch, tag or SHA to checkout for libsignal-service-java
+        default: ''  # Use the latest commit from the default branch
+  schedule:
+    - cron: '33 3 * * *'
+
+defaults:
+  run:
+    shell: bash   # Explicit for windows
+
+
+jobs:
+
+  libsignal-service-deps:
+    runs-on: ubuntu-latest
+
+    outputs:
+      gradle_deps: ${{ steps.gradle-config.outputs.deps }}
+      dummy_matrix: ${{ steps.dummy-matrix.outputs.matrix }}
+
+    env:
+      THIS_REPO_DIR: _this_repo_checkout
+
+    steps:
+
+      - name: Clone libsignal-service-java
+        uses: actions/checkout@v2
+        with:
+          repository: Turasa/libsignal-service-java
+          ref: ${{ github.event.inputs.libsignal-service-ref }}
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.THIS_REPO_DIR }}
+
+      - name: Extract dependencies info
+        id: gradle-config
+        run: |
+          #deps_lines=$(grep -E 'zkgroup|signal-client' service/build.gradle)
+          #deps_lines=$(bash "$THIS_REPO_DIR"/util.sh gradle_deps_vers)
+            # Above no longer works, the build.gradle format has changed.
+          deps_lines=$(grep -E 'zkgroup|signal-client' service/witness-verifications.gradle)
+          echo "$deps_lines"
+          deps_lines="${deps_lines//$'\n'/'%0A'}" # https://github.community/t/set-output-truncates-multiline-strings/16852
+          echo "::set-output name=deps::$deps_lines"
+
+      - name: Get libs info in json
+        id: dummy-matrix
+        run: python3 generate_matrix.py '0.0.0' '0.0.0'
+        working-directory: ${{ env.THIS_REPO_DIR }}
+
+
+  compare-releases:
+    needs:
+      - libsignal-service-deps
+
+    strategy:
+      matrix:
+        lib: ${{ fromJSON(needs.libsignal-service-deps.outputs.dummy_matrix).lib }}
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      zkgroup: ${{ steps.newer_version.outputs.zkgroup }}
+      libclient: ${{ steps.newer_version.outputs.libclient }}
+      # The lib names above must match those from the matrix. Have to type them explicitly, because github does not give different outputs for matrix runs.
+        ## https://github.community/t/bug-jobs-output-should-return-a-list-for-a-matrix-job/128626/24
+
+    steps:
+
+      - name: Dump strategy and matrix contexts
+        run: |
+          echo "${{ toJSON(strategy) }}"
+          echo "${{ toJSON(matrix) }}"
+
+      - name: Print libs versions from gradle dependencies
+        id: gradle_versions
+        env:
+          GRADLE_DEPS: ${{ needs.libsignal-service-deps.outputs.gradle_deps }}
+          JAR_NAME: ${{ matrix.lib.jar_name }}
+          LIB_NAME: ${{ matrix.lib.name }}
+        run: |
+          echo "$GRADLE_DEPS"
+          echo $JAR_NAME
+          ver=$(echo "$GRADLE_DEPS" | sed -nE "s/.*:$JAR_NAME:(.*)[\"'].*/\1/p")
+          echo $ver
+          echo "::set-output name=version::v$ver" # Note: added "v"
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v2
+
+      - name: Check if the dependency is already in this repo's releases
+        id: check_releases
+        env:
+          LIB_REPO_NAME: ${{ matrix.lib.repo }}
+          GRADLE_VER: ${{ steps.gradle_versions.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo $LIB_REPO_NAME
+          release_name=$(bash util.sh release_name "$LIB_REPO_NAME" "$GRADLE_VER")
+          echo "$release_name"
+          echo "::set-output name=release_name::$release_name"
+          release_data=$(bash util.sh get_release_data "$release_name")
+          echo "$release_data"
+          echo "::set-output name=release_data::$release_data"
+
+      - name: Create a new release
+        id: create_release
+        if: ${{ ! steps.check_releases.outputs.release_data }}
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "${{ steps.check_releases.outputs.release_name }}"
+          body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Output version that needs compiling
+        id: newer_version
+        if: ${{ ! steps.check_releases.outputs.release_data }}
+        env:
+          LIB_NAME: ${{ matrix.lib.name }}
+          GRADLE_VER: ${{ steps.gradle_versions.outputs.version }}
+          UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        run: |
+          echo "::set-output name=$LIB_NAME::{\"version\":\"$GRADLE_VER\",\"upload_url\":\"$UPLOAD_URL\"}"
+
+
+
+  matrix-setup:
+    needs:
+      - compare-releases
+
+    if: ${{ needs.compare-releases.outputs.zkgroup || needs.compare-releases.outputs.libclient }}
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+
+    steps:
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v2
+
+      - name: Generate matrix
+        id: matrix
+        env:
+          ZKGROUP_DATA: ${{ needs.compare-releases.outputs.zkgroup }}
+          LIBCLIENT_DATA: ${{ needs.compare-releases.outputs.libclient }}
+        run: |
+          ZKGROUP_VERSION=$(echo "$ZKGROUP_DATA" | jq -j '.version')
+          LIBCLIENT_VERSION=$(echo "$LIBCLIENT_DATA" | jq -j '.version')
+          echo "$ZKGROUP_VERSION" "$LIBCLIENT_VERSION"
+          python3 generate_matrix.py "$ZKGROUP_VERSION" "$LIBCLIENT_VERSION"
+
+
+  compile_native_libs:
+    needs:
+      - matrix-setup
+      - compare-releases
+
+    strategy:
+      matrix: ${{ fromJSON(needs.matrix-setup.outputs.matrix) }}
+
+    runs-on: ${{ matrix.host.runner }}
+
+    env:
+      TARGET: ${{ matrix.cross.target }}
+
+    # Ref:
+      # Upstream workflows:
+        # https://github.com/signalapp/zkgroup/blob/master/.github/workflows/artifacts.yml
+        # https://github.com/signalapp/libsignal-client/blob/master/.github/workflows/build_and_test.yml
+      # Signal-cli wiki:
+        # https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal
+
+    steps:
+
+      - name: Dump strategy and matrix contexts
+        run: |
+          echo "${{ toJSON(strategy) }}"
+          echo "${{ toJSON(matrix) }}"
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v2
+
+      - name: Generate file names for the current matrix item
+        id: filenames
+        run: python3 filename_for_matrix_item.py '${{ needs.matrix-setup.outputs.matrix }}' '${{ matrix.lib.name }}' '${{ matrix.host.runner }}' '${{ matrix.cross.target }}'
+
+      - name: Clone rust lib source
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ matrix.lib.repo }}
+          ref: ${{ matrix.lib.ref }}
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+
+      - name: Add target to rust toolchain
+        if: ${{ matrix.cross.target }}
+        run: rustup target add $TARGET
+
+      - name: Install C cross toolchain
+        if: ${{ matrix.cross.req-pkg }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install $APT_PKGS
+        env:
+          APT_PKGS: ${{ matrix.cross.req-pkg }}
+
+      - name: Add linker to cargo config
+        # Alternatively can add to rust flags
+          #RUSTFLAGS: -C linker=${{ matrix.cross.linker }}
+        if: ${{ matrix.cross.linker }}
+        run: |
+          cat >>~/.cargo/config <<EOF
+          [target.$TARGET]
+          linker = "$LINKER"
+          EOF
+        env:
+          LINKER: ${{ matrix.cross.linker }}
+
+      - name: Setup rust cache
+        # Cache action fails on macos-latest
+          # https://github.com/actions/cache/issues/403
+          # https://github.com/rust-lang/cargo/issues/8603
+          # https://github.com/Swatinem/rust-cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-rust
+        with:
+          path: |
+            ~/.cargo
+            ./target
+          key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-
+            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-
+
+      - name: Cargo build
+        run: |
+          if [[ -n $TARGET ]]; then
+            export CARGO_BUILD_TARGET=$TARGET
+          fi
+          cargo build --release --verbose  $CARGO_FLAGS
+        env:
+          RUSTFLAGS: -C link-arg=-s  ${{ matrix.host.rust-flags }} ${{ matrix.cross.rust-flags }}
+          CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
+
+      - name: Inspect built file
+        run: |
+          file $FILENAME
+          ldd $FILENAME || :
+          objdump -T $FILENAME | grep LIBC  || :
+          openssl sha256 $FILENAME
+        env:
+          FILENAME: ${{ steps.filenames.outputs.lib_filename }}
+        working-directory: target/${{ matrix.cross.target }}/release
+
+      - name: Create archive
+        env:
+          DIR: target/${{ matrix.cross.target }}/release
+          FILENAME: ${{ steps.filenames.outputs.lib_filename }}
+          ARCHIVE_NAME: ${{ steps.filenames.outputs.archive_name }}
+        run: tar -czvf ${ARCHIVE_NAME}.tar.gz --directory ${DIR}  ${FILENAME}
+
+      - name: Output upload URL
+        id: get_upload_url
+        env: ${{ needs.compare-releases.outputs }}  # This is a bit of a hack; needed because couldn't get this value to a string or extract the `matrix.lib.name` item another way (`toJSON` adds extraneous `\"`s)
+        run: |
+          LIB_DATA="$${{ matrix.lib.name }}"  # This is a bit of a hack.
+          echo "$LIB_DATA"
+          UPLOAD_URL=$(echo "$LIB_DATA" | jq -j ".upload_url")
+          echo "$UPLOAD_URL"
+          echo "::set-output name=url::$UPLOAD_URL"
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_upload_url.outputs.url }}
+          asset_path: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_name: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
+

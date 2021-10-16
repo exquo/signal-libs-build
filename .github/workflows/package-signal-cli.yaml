@@ -1,0 +1,284 @@
+name: package-signal-cli
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [compile-native-libs]
+    types: [completed]
+
+defaults:
+  run:
+    shell: bash   # Explicit for windows
+
+env:
+  signal-cli-build-artifact: signal-cli-build.tar
+  JAVA_VERSION: 11
+
+
+jobs:
+
+  check-new-release:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      signal-cli-version: ${{ steps.check-signal-cli.outputs.SIGNAL_CLI_VERSION }}
+      is-new-version: ${{ ! steps.check-this-repo.outputs.release_data }}
+      release_name: ${{ steps.check-this-repo.outputs.release_name }}
+
+    steps:
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v2
+
+      - name: Check latest signal-cli release version
+        id: check-signal-cli
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/AsamK/signal-cli/releases/latest |  jq -j '.tag_name')
+          echo $TAG
+          echo "::set-output name=SIGNAL_CLI_VERSION::$TAG"
+
+      - name: Search this repo's releases for the latest version
+        id: check-this-repo
+        env:
+          REPO: AsamK/signal-cli
+          VERSION: ${{ steps.check-signal-cli.outputs.SIGNAL_CLI_VERSION }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          release_name=$(bash util.sh release_name "$REPO" "$VERSION")
+          echo "$release_name"
+          echo "::set-output name=release_name::$release_name"
+          release_data=$(bash util.sh get_release_data "$release_name")
+          echo "$release_data"
+          echo "::set-output name=release_data::$release_data"
+
+
+
+  signal-cli-build:
+
+    needs: check-new-release
+    if: ${{ fromJSON(needs.check-new-release.outputs.is-new-version) }}  # str to bool
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      zkgroup-version: ${{ steps.native-lib-version.outputs.zkgroup }}
+      libclient-version: ${{ steps.native-lib-version.outputs.libclient }}
+      release-upload-url: ${{ steps.create-release.outputs.upload_url }}
+
+    env:
+      THIS_REPO_DIR: _this_repo_checkout
+
+    steps:
+
+      # Ref:
+        #https://github.com/AsamK/signal-cli/blob/master/.github/workflows/ci.yml
+
+      - name: Clone signal-cli source
+        uses: actions/checkout@v2
+        with:
+          repository: AsamK/signal-cli
+          ref: ${{ needs.check-new-release.outputs.signal-cli-version }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Cache Gradle stuff
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-gradle
+        with:
+          path: |
+            ~/.gradle
+            ./.gradle
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.JAVA_VERSION }}-${{ hashFiles('graalvm-config-dir') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ env.JAVA_VERSION }}-
+
+      - name: Gradle build
+        run: ./gradlew build
+
+      - name: Create shell wrapper in `build/install/signal-cli/bin`
+        run: ./gradlew installDist
+
+      - name: Test signal-cli binary
+        run: |
+          ./signal-cli -v
+        working-directory: build/install/signal-cli/bin
+
+      #- name: Create tar file in build/distributions
+        # Isn't needed, the .tar file is already created
+        #run: ./gradlew distTar
+
+      - name: Upload the built archive
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.signal-cli-build-artifact }}
+          path: build/distributions/signal-cli-*.tar
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.THIS_REPO_DIR }}
+
+      - name: Get libs info in json
+        id: dummy-matrix
+        run: python3 "$THIS_REPO_DIR"/generate_matrix.py '0.0.0' '0.0.0'
+
+      - name: Print version nums of native signal libs dependencies
+        id: native-lib-version
+        env:
+          MATRIX_TEMPLATE: ${{ steps.dummy-matrix.outputs.matrix }}
+        run: |
+          bash "$THIS_REPO_DIR"/util.sh find_signal_cli_jars_vers "$MATRIX_TEMPLATE"
+
+      - name: Create new release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.check-new-release.outputs.release_name }}
+          body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            #Native libs:
+            #`zkgroup: ${{steps.native-lib-version.outputs.zkgroup}}`
+            #`libsignal-client: ${{steps.native-lib-version.outputs.libclient}}`
+            #"
+
+
+  matrix-setup:
+    needs:
+      - signal-cli-build
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      matrix: ${{ steps.generate_matrix.outputs.matrix }}
+
+    steps:
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v2
+
+      - name: Generate matrix
+        id: generate_matrix
+        env:
+          ZKGROUP_VERSION: ${{ needs.signal-cli-build.outputs.zkgroup-version }}
+          LIBCLIENT_VERSION: ${{ needs.signal-cli-build.outputs.libclient-version }}
+        run: |
+          echo "$ZKGROUP_VERSION" "$LIBCLIENT_VERSION"
+          python3 generate_matrix.py "$ZKGROUP_VERSION" "$LIBCLIENT_VERSION"
+
+
+
+  repackage-signal-cli:
+
+    needs:
+      - check-new-release
+      - signal-cli-build
+      - matrix-setup
+
+    if: ${{ fromJSON(needs.matrix-setup.outputs.matrix).host }}  # Skip this job if cross-compiling only
+
+    strategy:
+      matrix:
+        runner: ${{ fromJSON(needs.matrix-setup.outputs.matrix).host.*.runner }}
+
+    runs-on: ${{ matrix.runner }}
+
+    env:
+      THIS_REPO_DIR: _this_repo_checkout
+
+    steps:
+
+      - name: Checkout source with git
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.THIS_REPO_DIR }}
+
+      - name: Download the compiled libs from release assets
+        env:
+          MATRIX: ${{needs.matrix-setup.outputs.matrix}}
+          RUNNER: ${{matrix.runner}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bash "$THIS_REPO_DIR"/util.sh dl_libs_for_matrix "$MATRIX" "$RUNNER"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ env.signal-cli-build-artifact }}
+
+      - name: Display downloaded files
+        run: ls -la .
+
+      - name: Unpack archives
+        run: |
+          tar -xvf signal-cli-*.tar
+          find . -maxdepth 1 -name '*.tar.gz' -exec tar -xzvf {} \;
+          rm *.tar *.tar.gz
+
+      - name: Install zip on windows
+        # Needed because the `jar` command can't be used to delete files from .jar archives. On linux and macos `zip` is installed by default.
+        if: ${{ runner.os == 'Windows' }}
+        run: choco install zip
+
+      - name: Replace lib binaries in jar files with the compiled ones
+        env:
+          MATRIX: ${{needs.matrix-setup.outputs.matrix}}
+          LIB_DIR: './signal-cli-*/lib'
+        run: |
+          bash "$THIS_REPO_DIR"/util.sh swap_signal_cli_jar_libs "$MATRIX" $LIB_DIR
+
+      - name: Add lib/dll to Java path in signal-cli.bat
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          cd signal-cli-*/bin
+          sed -i '/set DEFAULT_JVM_OPTS=.*/a set JAVA_OPTS="-Djava.library.path=%APP_HOME%\\lib\\dll"' signal-cli.bat
+          grep JAVA_OPTS signal-cli.bat
+
+      - name: Set up JDK (for running signal-cli executable)
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Run updated signal-cli
+        run: |
+          cd signal-cli-*/bin
+          if [[ "$RUNNER_OS" == 'Windows' ]]; then
+            EXECUTABLE_SUFFIX=".bat"
+          fi
+          if {
+            # Exit iff signal-cli complains about missing libraries.
+            # Signal-cli process's exit code is always 1, because an account not registered yet.
+            set +o pipefail
+            ./signal-cli${EXECUTABLE_SUFFIX} receive  \
+              2>&1 |  grep -E 'lib(signal|zkgroup)'
+              #|&  grep -E 'lib(signal|zkgroup)' ;  # in bash on macos `|&` is unknown
+          }; then
+            false
+          fi
+
+      - name: Create archive file for uploading
+        id: archive
+        env:
+          OS: x86_64-${{ runner.os }}
+          signal_cli_version: ${{ needs.check-new-release.outputs.signal-cli-version }}
+        run: |
+          archive_name=signal-cli-${signal_cli_version}-${OS}
+          tar -czvf "${archive_name}".tar.gz  signal-cli-*
+          echo "::set-output name=archive_name::$archive_name"
+          openssl sha256 $archive_name.tar.gz
+
+      - name: Add repackaged signal-cli to release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.signal-cli-build.outputs.release-upload-url }}
+          asset_path: ${{ steps.archive.outputs.archive_name }}.tar.gz
+          asset_name: ${{ steps.archive.outputs.archive_name }}.tar.gz
+          asset_content_type: application/x-compressed-tar  # .tar.gz
