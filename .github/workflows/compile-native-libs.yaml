@@ -118,6 +118,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "${{ steps.check_releases.outputs.release_name }}"
+          release_name: "${{ steps.check_releases.outputs.release_name }}"
           body: "Produced by GitHub actions run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Output version that needs compiling
