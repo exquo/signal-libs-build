@@ -55,12 +55,6 @@ All this means that you can download and run the published binaries without havi
 
 Tip: use `uname -m` to get your device's architecture.
 
-##### Notable omissions
-
-- `aarch64-apple-darwin`
-	MacOS ARM64 / M1
-	(see [#1](../../issues/1))
-
 Suggestions for additional platforms are welcome - feel free to open an issue!
 
 

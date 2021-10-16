@@ -37,6 +37,14 @@ hosts = {
                 "lib-suffix": ".dylib",
                 "triple": "x86_64-apple-darwin",
             },
+        #"macos-aarch64": {
+                #"runner": "macos-11",
+                #"lib-prefix": "lib",
+                #"lib-suffix": ".dylib",
+                #"triple": "aarch64-apple-darwin",
+                    ## macos-11 runner uses x86-64 processers.
+                    ## Using a cross target aarch64-apple (below)
+            #},
         "windows": {
                 "runner": "windows-latest",
                 "lib-suffix": ".dll",
@@ -64,6 +72,14 @@ cross_targets = [
             "req-pkg": "gcc-i686-linux-gnu",
             "linker": "i686-linux-gnu-gcc",
         },
+        {
+            "target": "aarch64-apple-darwin",
+            "host": {
+                "runner": "macos-11",
+                "lib-prefix": "lib",
+                "lib-suffix": ".dylib",
+            },
+        },
     ]
 
 
@@ -74,7 +90,6 @@ matrix = {
         "include": [],
         }
 
-target_to_host = {"linux": "linux", "apple": "macos"}
 
 for lib_name, lib_dict in libs.items():
     if not libs_ver[lib_name]:
@@ -85,17 +100,23 @@ for lib_name, lib_dict in libs.items():
 
 matrix["host"] = list(hosts.values())
 
+target_to_host = {"linux": "linux", "apple": "macos"}
 for cross in cross_targets:
-    for lib in matrix["lib"]:
+    try:
+        host = cross.pop("host")
+    except KeyError:
         for target_partial_name, host_name in target_to_host.items():
             if target_partial_name in cross["target"]:
-                matrix["include"].append(
-                        {
-                            "lib": lib,
-                            "host": hosts[host_name],
-                            "cross": cross,
-                        }
-                    )
+                host = hosts[host_name]
+                break
+    for lib in matrix["lib"]:
+        matrix["include"].append(
+                {
+                    "lib": lib,
+                    "host": host,
+                    "cross": cross,
+                }
+            )
 
 if not matrix.get("host"):
     matrix = {"include": matrix["include"]}
