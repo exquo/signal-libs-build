@@ -47,6 +47,8 @@ All this means that you can download and run the published binaries with a confi
 
 ##### Compiled libraries:
 
+- `aarch64-apple-darwin`
+	MacOS, ARM64.
 - `aarch64-linux-gnu`
 	Raspberry Pi 3,4; Pine A64; many SoC.
 - `armv7-linux-gnueabihf`
