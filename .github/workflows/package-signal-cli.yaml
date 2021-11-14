@@ -12,7 +12,7 @@ defaults:
 
 env:
   signal-cli-build-artifact: signal-cli-build.tar
-  JAVA_VERSION: 11
+  JAVA_VERSION: 17
 
 
 jobs:
