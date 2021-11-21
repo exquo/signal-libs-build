@@ -11,11 +11,12 @@ libs_ver["libclient"] = sys.argv[2]
 
 
 libs = {
-        "zkgroup": {
-            "repo": "signalapp/zkgroup",
-            "jar_name": "zkgroup-java",
-            "filename": "zkgroup",
-            },
+        #"zkgroup": {
+            # zkgroup is included in libsignal-client v0.10.0, and is no longer a dependency in libsignal-service-java
+            #"repo": "signalapp/zkgroup",
+            #"jar_name": "zkgroup-java",
+            #"filename": "zkgroup",
+            #},
         "libclient": {
             "repo": "signalapp/libsignal-client",
             "jar_name": "signal-client-java",
