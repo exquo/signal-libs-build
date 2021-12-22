@@ -42,10 +42,11 @@ jobs:
       - name: Extract dependencies info
         id: gradle-config
         run: |
-          #deps_lines=$(grep -E 'zkgroup|signal-client' service/build.gradle)
-          #deps_lines=$(bash "$THIS_REPO_DIR"/util.sh gradle_deps_vers)
+          ##deps_lines=$(grep -E 'zkgroup|signal-client' service/build.gradle)
+          ##deps_lines=$(bash "$THIS_REPO_DIR"/util.sh gradle_deps_vers)
+          #deps_lines=$(grep -E 'zkgroup|signal-client' service/witness-verifications.gradle)
             # Above no longer works, the build.gradle format has changed.
-          deps_lines=$(grep -E 'zkgroup|signal-client' service/witness-verifications.gradle)
+          deps_lines=$(grep "version('signal-client'" dependencies.gradle)
           echo "$deps_lines"
           deps_lines="${deps_lines//$'\n'/'%0A'}" # https://github.community/t/set-output-truncates-multiline-strings/16852
           echo "::set-output name=deps::$deps_lines"
@@ -87,8 +88,8 @@ jobs:
           LIB_NAME: ${{ matrix.lib.name }}
         run: |
           echo "$GRADLE_DEPS"
-          echo $JAR_NAME
-          ver=$(echo "$GRADLE_DEPS" | sed -nE "s/.*:$JAR_NAME:(.*)[\"'].*/\1/p")
+          #echo $JAR_NAME
+          ver=$(echo "$GRADLE_DEPS" | sed -nE "s/\s*version\('signal-client', '(.*)'\)/\1/p")
           echo $ver
           echo "::set-output name=version::v$ver" # Note: added "v"
 
