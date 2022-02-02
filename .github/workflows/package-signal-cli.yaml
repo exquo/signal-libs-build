@@ -1,10 +1,12 @@
 name: package-signal-cli
 
+# UPDATE: signal-cli v0.10.3+ bundles the macos and windows lib builds. Doing it in this repo is no longer needed.
+
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: [compile-native-libs]
-    types: [completed]
+  #workflow_run:
+    #workflows: [compile-native-libs]
+    #types: [completed]
 
 defaults:
   run:
