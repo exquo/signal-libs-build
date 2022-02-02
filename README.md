@@ -7,7 +7,9 @@ This repo is a CI/CD workflow that uses GitHub Actions to automatically compile 
 Using signal-cli currently requires compiling them individually for a specific operating system and a processor architecture. This repo aims to simplify the installation by providing the pre-compiled binaries for most of the popular platforms (see [available platforms](#available-platforms) below).
 
 **Update**: As of libsignal-client [`v0.10.0`](https://github.com/signalapp/libsignal-client/releases/tag/v0.10.0), the zkgroup library is now incorporated into the libsignal-client.
+
 **Update 2**: As of libsignal-client `v0.10.0`, builds for x86_64 macOS and Windows are available in the [upstream releases](https://github.com/signalapp/libsignal-client/releases/), along with the usual Linux builds.
+
 **Update 3**: As of signal-cli `v0.10.3`, the macOS and Windows builds are bundled into the [official releases](https://github.com/AsamK/signal-cli/releases).
 
 
