@@ -46,7 +46,7 @@ jobs:
           ##deps_lines=$(bash "$THIS_REPO_DIR"/util.sh gradle_deps_vers)
           #deps_lines=$(grep -E 'zkgroup|signal-client' service/witness-verifications.gradle)
             # Above no longer works, the build.gradle format has changed.
-          deps_lines=$(grep "version('signal-client'" dependencies.gradle)
+          deps_lines=$(grep "version('libsignal-client'" dependencies.gradle)
           echo "$deps_lines"
           deps_lines="${deps_lines//$'\n'/'%0A'}" # https://github.community/t/set-output-truncates-multiline-strings/16852
           echo "::set-output name=deps::$deps_lines"
