@@ -89,7 +89,7 @@ jobs:
         run: |
           echo "$GRADLE_DEPS"
           #echo $JAR_NAME
-          ver=$(echo "$GRADLE_DEPS" | sed -nE "s/\s*version\('signal-client', '(.*)'\)/\1/p")
+          ver=$(echo "$GRADLE_DEPS" | sed -nE "s/\s*version\('libsignal-client', '(.*)'\)/\1/p")
           echo $ver
           echo "::set-output name=version::v$ver" # Note: added "v"
 
