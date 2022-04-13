@@ -17,11 +17,10 @@ Using signal-cli currently requires compiling them individually for a specific o
 ### How to use it
 
 The compiled library files (`.so` / `.dylib` / `.dll`) can be incorporated into signal-cli according to the [instructions on its wiki](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal). For Linux, this amounts to swapping the `.so` files inside the `.jar` archives.
-For example, for an ARM64 version of signal-cli v0.10.5, download the following files: `signal-cli-0.10.5-Linux.tar.gz` from the signal-cli repo, `libsignal_jni.so-v0.15.0-aarch64-unknown-linux-gnu.tar.gz` from this repo, and unpack them with `tar -xzf ….tar.gz`. Then execute the following commands:
 
-	zip -uj signal-cli-<SIGNAL_CLI_VER>/lib/libsignal-client-<LIBCLIENT_VER>.jar libsignal_jni.so
+For example, for an ARM64 version of signal-cli v0.10.5, download `signal-cli-0.10.5-Linux.tar.gz` from the signal-cli repo and `libsignal_jni.so-v0.15.0-aarch64-unknown-linux-gnu.tar.gz` from this repo. Unpack them with `tar -xzf ….tar.gz`. Then execute:
 
-where substitute `<SIGNAL_CLI_VER>` with `0.10.5`, `<LIBCLIENT_VER>` with `0.15.0` (notice no `v` character before the version number!). The specific libsignal-client version required can be found in the [changelog](https://github.com/AsamK/signal-cli/blob/master/CHANGELOG.md) for signal-cli.
+	zip -uj signal-cli-0.10.5/lib/libsignal-client-0.15.0.jar libsignal_jni.so
 
 
 ### How it works
