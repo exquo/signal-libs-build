@@ -169,6 +169,7 @@ jobs:
 
     strategy:
       matrix: ${{ fromJSON(needs.matrix-setup.outputs.matrix) }}
+      fail-fast: false  # do not abort if some of the builds fail
 
     runs-on: ${{ matrix.host.runner }}
 
