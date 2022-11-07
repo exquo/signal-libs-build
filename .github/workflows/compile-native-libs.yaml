@@ -77,8 +77,8 @@ jobs:
 
       - name: Dump strategy and matrix contexts
         run: |
-          echo "${{ toJSON(strategy) }}"
-          echo "${{ toJSON(matrix) }}"
+          echo '${{ toJSON(strategy) }}'
+          echo '${{ toJSON(matrix) }}'
 
       - name: Print libs versions from gradle dependencies
         id: gradle_versions
@@ -186,8 +186,8 @@ jobs:
 
       - name: Dump strategy and matrix contexts
         run: |
-          echo "${{ toJSON(strategy) }}"
-          echo "${{ toJSON(matrix) }}"
+          echo '${{ toJSON(strategy) }}'
+          echo '${{ toJSON(matrix) }}'
 
       - name: Checkout this repo sources
         uses: actions/checkout@v2
@@ -212,13 +212,13 @@ jobs:
         if: ${{ matrix.cross.target }}
         run: rustup target add $TARGET
 
-      - name: Install C cross toolchain
-        if: ${{ matrix.cross.req-pkg }}
+      - name: Install required packages
+        if: ${{ matrix.host.req-pkg || matrix.cross.req-pkg }}
         run: |
-          sudo apt-get update
-          sudo apt-get install $APT_PKGS
+          bash -c "$INSTALL_CMD $PKGS"
         env:
-          APT_PKGS: ${{ matrix.cross.req-pkg }}
+          INSTALL_CMD: ${{ matrix.host.install-cmd }}
+          PKGS: ${{ matrix.host.req-pkg }} ${{ matrix.cross.req-pkg }}
 
       - name: Add linker to cargo config
         # Alternatively can add to rust flags

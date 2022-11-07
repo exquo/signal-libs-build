@@ -31,6 +31,7 @@ hosts = {
                 "lib-prefix": "lib",
                 "lib-suffix": ".so",
                 "triple": "x86_64-unknown-linux-gnu",
+                "install-cmd": "sudo apt-get update && sudo apt-get install",
                 },
         "macos": {
                 "runner": "macos-latest",
@@ -50,6 +51,8 @@ hosts = {
                 "runner": "windows-latest",
                 "lib-suffix": ".dll",
                 "triple": "x86_64-pc-windows",  # no "-msvc" because static lib, see next line
+                "install-cmd": "choco install",
+                "req-pkg": "nasm",  # req for boringssl
                 "rust-flags": "-C target-feature=+crt-static",
                         # Static linking to remove MSVC dependendency.
                         # zkgroup/ffi/node/Makefile
