@@ -2,6 +2,9 @@ name: build-boring
 
 on:
   workflow_dispatch
+  push:
+    branches:
+      - 'boring-build'
 
 defaults:
   run:
