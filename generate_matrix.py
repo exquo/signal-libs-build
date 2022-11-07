@@ -21,7 +21,7 @@ libs = {
             "repo": "signalapp/libsignal-client",
             "jar_name": "signal-client-java",
             "filename": "signal_jni",
-            "cargo-flags": "-p libsignal-jni",
+            #"cargo-flags": "-p libsignal-jni",
             },
         }
 
