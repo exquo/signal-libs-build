@@ -254,10 +254,12 @@ jobs:
           if [[ -n $TARGET ]]; then
             export CARGO_BUILD_TARGET=$TARGET
           fi
-          cargo build --release --verbose  $CARGO_FLAGS
+          env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
         env:
           RUSTFLAGS: -C link-arg=-s  ${{ matrix.host.rust-flags }} ${{ matrix.cross.rust-flags }}
           CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
+          BUILD_ENV_VARS: ${{ matrix.host.build-env-vars }} ${{ matrix.cross.build-env-vars }}
+
 
       - name: Inspect built file
         run: |

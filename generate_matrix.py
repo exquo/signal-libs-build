@@ -63,18 +63,22 @@ hosts = {
 cross_targets = [
         {
             "target": "aarch64-unknown-linux-gnu",
-            "req-pkg": "gcc-aarch64-linux-gnu",
+            "req-pkg": "gcc-aarch64-linux-gnu g++-aarch64-linux-gnu",
             "linker": "aarch64-linux-gnu-gcc",
+            "build-env-vars": "CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ CPATH=/usr/aarch64-linux-gnu/include",
+                #https://github.com/signalapp/libsignal/issues/482#issuecomment-1220896664
         },
         {
             "target": "armv7-unknown-linux-gnueabihf",
-            "req-pkg": "gcc-arm-linux-gnueabihf",
+            "req-pkg": "gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf",
             "linker": "arm-linux-gnueabihf-gcc",
+            "build-env-vars": "CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ CPATH=/usr/arm-linux-gnueabihf/include",
         },
         {
             "target": "i686-unknown-linux-gnu",
-            "req-pkg": "gcc-i686-linux-gnu",
+            "req-pkg": "gcc-i686-linux-gnu g++-i686-linux-gnu",
             "linker": "i686-linux-gnu-gcc",
+            "build-env-vars": "CC=i686-linux-gnu-gcc CXX=i686-linux-gnu-g++ CPATH=/usr/i686-linux-gnu/include",
         },
         {
             "target": "aarch64-apple-darwin",
