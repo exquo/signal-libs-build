@@ -29,13 +29,13 @@ jobs:
     steps:
 
       - name: Clone libsignal-service-java
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: Turasa/libsignal-service-java
           ref: ${{ github.event.inputs.libsignal-service-ref }}
 
       - name: Checkout this repo sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ${{ env.THIS_REPO_DIR }}
 
@@ -94,7 +94,7 @@ jobs:
           echo "::set-output name=version::v$ver" # Note: added "v"
 
       - name: Checkout this repo sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check if the dependency is already in this repo's releases
         id: check_releases
@@ -148,7 +148,7 @@ jobs:
     steps:
 
       - name: Checkout this repo sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Generate matrix
         id: matrix
@@ -191,14 +191,14 @@ jobs:
           echo '${{ toJSON(matrix) }}'
 
       - name: Checkout this repo sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Generate file names for the current matrix item
         id: filenames
         run: python3 filename_for_matrix_item.py '${{ needs.matrix-setup.outputs.matrix }}' '${{ matrix.lib.name }}' '${{ matrix.host.runner }}' '${{ matrix.cross.target }}'
 
       - name: Clone rust lib source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ${{ matrix.lib.repo }}
           ref: ${{ matrix.lib.ref }}
@@ -238,7 +238,7 @@ jobs:
           # https://github.com/actions/cache/issues/403
           # https://github.com/rust-lang/cargo/issues/8603
           # https://github.com/Swatinem/rust-cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           cache-name: cache-rust
         with:
