@@ -1,0 +1,121 @@
+name: build-boring
+
+on:
+  workflow_dispatch
+
+defaults:
+  run:
+    shell: bash   # Explicit for windows
+
+
+jobs:
+
+  matrix-setup:
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+
+    steps:
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v3
+
+      - name: Generate matrix
+        id: matrix
+        run: |
+          ZKGROUP_VERSION=0.0.0
+          LIBCLIENT_VERSION=0.0.0
+          echo "$ZKGROUP_VERSION" "$LIBCLIENT_VERSION"
+          python3 generate_matrix.py "$ZKGROUP_VERSION" "$LIBCLIENT_VERSION"
+
+
+  build_main:
+    needs:
+      - matrix-setup
+
+    strategy:
+      matrix: ${{ fromJSON(needs.matrix-setup.outputs.matrix) }}
+      fail-fast: false  # debugging
+
+    runs-on: ${{ matrix.host.runner }}
+
+    env:
+      TARGET: ${{ matrix.cross.target }}
+
+    steps:
+
+      - name: Dump strategy and matrix contexts
+        run: |
+          echo '${{ toJSON(strategy) }}'
+          echo '${{ toJSON(matrix) }}'
+
+      - name: Checkout this repo sources
+        uses: actions/checkout@v3
+
+      - name: Clone rust lib source
+        uses: actions/checkout@v3
+        with:
+          #repository: cloudflare/boring
+          repository: signalapp/boring
+          ref: libsignal
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+
+      - name: Add target to rust toolchain
+        if: ${{ matrix.cross.target }}
+        run: rustup target add $TARGET
+
+      - name: Install required packages
+        if: ${{ matrix.host.req-pkg || matrix.cross.req-pkg }}
+        run: |
+          bash -c "$INSTALL_CMD $PKGS"
+        env:
+          INSTALL_CMD: ${{ matrix.host.install-cmd }}
+          PKGS: ${{ matrix.host.req-pkg }} ${{ matrix.cross.req-pkg }}
+
+      - name: Add linker to cargo config
+        # Alternatively can add to rust flags
+          #RUSTFLAGS: -C linker=${{ matrix.cross.linker }}
+        if: ${{ matrix.cross.linker }}
+        run: |
+          cat >>~/.cargo/config <<EOF
+          [target.$TARGET]
+          linker = "$LINKER"
+          EOF
+        env:
+          LINKER: ${{ matrix.cross.linker }}
+
+      - name: Setup rust cache
+        # Cache action fails on macos-latest
+          # https://github.com/actions/cache/issues/403
+          # https://github.com/rust-lang/cargo/issues/8603
+          # https://github.com/Swatinem/rust-cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-rust
+        with:
+          path: |
+            ~/.cargo
+            ./target
+          key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-
+            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-
+
+      - name: Cargo build
+        run: |
+          if [[ -n $TARGET ]]; then
+            export CARGO_BUILD_TARGET=$TARGET
+          fi
+          env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
+        env:
+          RUSTFLAGS: -C link-arg=-s  ${{ matrix.host.rust-flags }} ${{ matrix.cross.rust-flags }}
+          CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
+          BUILD_ENV_VARS: ${{ matrix.host.build-env-vars }} ${{ matrix.cross.build-env-vars }}
+
