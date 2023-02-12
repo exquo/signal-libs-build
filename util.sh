@@ -9,6 +9,16 @@ release_name() {
 	echo "${REPO}_${VERSION}"
 }
 
+get_latest_release_name() {
+	REPO=${1:-$GITHUB_REPOSITORY}
+	#echo "GETting: ${GITHUB_API_URL}/repos/${REPO}/releases/latest"
+	latest_release_json=$(curl -sL \
+		-H "Authorization: Bearer $GITHUB_TOKEN" \
+		"${GITHUB_API_URL}/repos/${REPO}/releases/latest")
+	#echo "latest_release_json = $latest_release_json"
+	echo "$latest_release_json" | jq -r '.name'
+}
+
 get_release_data() {
 	RELEASE_NAME=$1
 	REPO=${2:-$GITHUB_REPOSITORY}

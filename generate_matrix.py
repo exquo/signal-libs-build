@@ -2,12 +2,12 @@
 
 import json
 import pprint
+import os
 import sys
 
 print(sys.argv)
 libs_ver = {}
-libs_ver["zkgroup"] = sys.argv[1]
-libs_ver["libclient"] = sys.argv[2]
+libs_ver["libclient"] = sys.argv[1]
 
 
 libs = {
@@ -72,7 +72,7 @@ cross_targets = [
             "target": "armv7-unknown-linux-gnueabihf",
             "req-pkg": "gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf",
             "linker": "arm-linux-gnueabihf-gcc",
-            "build-env-vars": "CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ CPATH=/usr/arm-linux-gnueabihf/include",
+            "build-env-vars": "CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ CPATH=/usr/arm-linux-gnueabihf/include RUST_BACKTRACE=1",
         },
         {
             "target": "i686-unknown-linux-gnu",
@@ -139,4 +139,7 @@ print("Total num of jobs:", jobs_total)
 pprint.pprint(matrix)
 
 j = json.dumps(matrix)
-print("::set-output name=matrix::" + j)
+gh_output_file = os.environ["GITHUB_OUTPUT"]
+with open(gh_output_file, 'a') as gh_out:
+    gh_out.write(f"matrix={j}\n")
+

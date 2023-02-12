@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import sys
 
 matrix = json.loads(sys.argv[1])
@@ -32,7 +33,6 @@ lib_filename = "".join([
     host_dict["lib-suffix"]
     ])
 print(lib_filename)
-print("::set-output name=lib_filename::" + lib_filename)
 
 archive_name = "".join([
     lib_filename,
@@ -42,4 +42,11 @@ archive_name = "".join([
     cross_dict["target"] if cross_dict else host_dict["triple"]
     ])
 print(archive_name)
-print("::set-output name=archive_name::" + archive_name)
+
+gh_output_file = os.environ["GITHUB_OUTPUT"]
+with open(gh_output_file, 'a') as gh_out:
+    gh_out.write('\n'.join((
+        f"lib_filename={lib_filename}",
+        f"archive_name={archive_name}",
+        ''
+        )))
