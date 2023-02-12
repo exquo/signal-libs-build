@@ -3,7 +3,7 @@ name: libsignal-build
 on:
   push:
     branches:
-      - fix_armv7_for_0_21_1
+      - fix_armv7_for_v0_21_1
 
 defaults:
   run:
