@@ -7,7 +7,7 @@ import sys
 
 print(sys.argv)
 libs_ver = {}
-libs_ver["libclient"] = sys.argv[1]
+libs_ver["libsignal"] = sys.argv[1]
 
 
 libs = {
@@ -17,8 +17,8 @@ libs = {
             #"jar_name": "zkgroup-java",
             #"filename": "zkgroup",
             #},
-        "libclient": {
-            "repo": "signalapp/libsignal-client",
+        "libsignal": {
+            "repo": "signalapp/libsignal",
             "jar_name": "signal-client-java",
             "filename": "signal_jni",
             "cargo-flags": "-p libsignal-jni",
