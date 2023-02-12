@@ -1,13 +1,9 @@
 name: libsignal-build
 
 on:
-  workflow_dispatch:
-    inputs:
-      libsignal-ref:
-        description: The branch, tag or SHA to checkout for libsignal
-        default: ''  # Use the latest commit from the default branch
-  schedule:
-    - cron: '33 3 * * *'
+  push:
+    branches:
+      - fix_armv7_for_0_21_1
 
 defaults:
   run:
@@ -38,7 +34,8 @@ jobs:
         env:
           MATRIX_JSON: ${{ steps.dummy_matrix.outputs.matrix }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          upstream_ver: ${{ github.event.inputs.libsignal-ref }}
+          upstream_ver: a6fcbcd97acb83573f4e16c1cca28e3821f6eb59
+            # Commit incorporating morph027's fix
         run: |
           LIB_REPO=$(echo "$MATRIX_JSON" | jq -j '.lib[].repo' )
           echo "LIB_REPO = $LIB_REPO"
@@ -51,36 +48,36 @@ jobs:
           echo "release_name=$release_name" >> $GITHUB_OUTPUT
 
 
-  new_release:
-
-    needs:
-      - compare_releases
-
-    if: ${{ needs.compare_releases.outputs.release_name }}
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Checkout this repo sources
-        uses: actions/checkout@v3
-
-      - name: Create a new release
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-          TAG_NAME: ${{ needs.compare_releases.outputs.release_name }}
-        run: |
-          gh release create \
-            --target "$GITHUB_REF_NAME" \
-            -n "Produced by GitHub actions run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
-             "$TAG_NAME"
+  #new_release:
+    #
+    #needs:
+      #- compare_releases
+    #
+    #if: ${{ needs.compare_releases.outputs.release_name }}
+    #
+    #runs-on: ubuntu-latest
+    #
+    #steps:
+      #
+      #- name: Checkout this repo sources
+        #uses: actions/checkout@v3
+      #
+      #- name: Create a new release
+        #id: create_release
+        #env:
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          #GITHUB_REF_NAME: ${{ github.ref_name }}
+          #TAG_NAME: ${{ needs.compare_releases.outputs.release_name }}
+        #run: |
+          #gh release create \
+            #--target "$GITHUB_REF_NAME" \
+            #-n "Produced by GitHub actions run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+             #"$TAG_NAME"
 
 
   matrix_setup:
     needs:
-      - new_release
+      #- new_release
       - compare_releases
 
     outputs:
@@ -226,7 +223,8 @@ jobs:
       - name: Upload release asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ needs.compare_releases.outputs.release_name }}
+          TAG_NAME: libsignal-client_v0.21.1
+            # specifying manually
           FILENAME: ${{ steps.filenames.outputs.archive_name }}.tar.gz
         working-directory: ${{ env.THIS_REPO_DIR }}
         run: gh release upload "$TAG_NAME" "${GITHUB_WORKSPACE}/${FILENAME}"

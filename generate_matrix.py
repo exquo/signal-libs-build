@@ -33,12 +33,12 @@ hosts = {
                 "triple": "x86_64-unknown-linux-gnu",
                 "install-cmd": "sudo apt-get update && sudo apt-get install",
                 },
-        "macos": {
-                "runner": "macos-latest",
-                "lib-prefix": "lib",
-                "lib-suffix": ".dylib",
-                "triple": "x86_64-apple-darwin",
-            },
+        #"macos": {
+                #"runner": "macos-latest",
+                #"lib-prefix": "lib",
+                #"lib-suffix": ".dylib",
+                #"triple": "x86_64-apple-darwin",
+            #},
         #"macos-aarch64": {
                 #"runner": "macos-11",
                 #"lib-prefix": "lib",
@@ -47,47 +47,47 @@ hosts = {
                     ## macos-11 runner uses x86-64 processers.
                     ## Using a cross target aarch64-apple (below)
             #},
-        "windows": {
-                "runner": "windows-latest",
-                "lib-suffix": ".dll",
-                "triple": "x86_64-pc-windows",  # no "-msvc" because static lib, see next line
-                "install-cmd": "choco install",
-                "req-pkg": "nasm",  # req for boringssl
-                "rust-flags": "-C target-feature=+crt-static",
-                        # Static linking to remove MSVC dependendency.
-                        # zkgroup/ffi/node/Makefile
-                        # libsignal-client/node/build_node_bridge.py
-            },
+        #"windows": {
+                #"runner": "windows-latest",
+                #"lib-suffix": ".dll",
+                #"triple": "x86_64-pc-windows",  # no "-msvc" because static lib, see next line
+                #"install-cmd": "choco install",
+                #"req-pkg": "nasm",  # req for boringssl
+                #"rust-flags": "-C target-feature=+crt-static",
+                        ## Static linking to remove MSVC dependendency.
+                        ## zkgroup/ffi/node/Makefile
+                        ## libsignal-client/node/build_node_bridge.py
+            #},
         }
 
 cross_targets = [
-        {
-            "target": "aarch64-unknown-linux-gnu",
-            "req-pkg": "gcc-aarch64-linux-gnu g++-aarch64-linux-gnu",
-            "linker": "aarch64-linux-gnu-gcc",
-            "build-env-vars": "CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ CPATH=/usr/aarch64-linux-gnu/include",
-                #https://github.com/signalapp/libsignal/issues/482#issuecomment-1220896664
-        },
+        #{
+            #"target": "aarch64-unknown-linux-gnu",
+            #"req-pkg": "gcc-aarch64-linux-gnu g++-aarch64-linux-gnu",
+            #"linker": "aarch64-linux-gnu-gcc",
+            #"build-env-vars": "CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ CPATH=/usr/aarch64-linux-gnu/include",
+                ##https://github.com/signalapp/libsignal/issues/482#issuecomment-1220896664
+        #},
         {
             "target": "armv7-unknown-linux-gnueabihf",
             "req-pkg": "gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf",
             "linker": "arm-linux-gnueabihf-gcc",
             "build-env-vars": "CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ CPATH=/usr/arm-linux-gnueabihf/include RUST_BACKTRACE=1",
         },
-        {
-            "target": "i686-unknown-linux-gnu",
-            "req-pkg": "gcc-i686-linux-gnu g++-i686-linux-gnu",
-            "linker": "i686-linux-gnu-gcc",
-            "build-env-vars": "CC=i686-linux-gnu-gcc CXX=i686-linux-gnu-g++ CPATH=/usr/i686-linux-gnu/include",
-        },
-        {
-            "target": "aarch64-apple-darwin",
-            "host": {
-                "runner": "macos-11",
-                "lib-prefix": "lib",
-                "lib-suffix": ".dylib",
-            },
-        },
+        #{
+            #"target": "i686-unknown-linux-gnu",
+            #"req-pkg": "gcc-i686-linux-gnu g++-i686-linux-gnu",
+            #"linker": "i686-linux-gnu-gcc",
+            #"build-env-vars": "CC=i686-linux-gnu-gcc CXX=i686-linux-gnu-g++ CPATH=/usr/i686-linux-gnu/include",
+        #},
+        #{
+            #"target": "aarch64-apple-darwin",
+            #"host": {
+                #"runner": "macos-11",
+                #"lib-prefix": "lib",
+                #"lib-suffix": ".dylib",
+            #},
+        #},
     ]
 
 
