@@ -11,32 +11,24 @@ jobs:
 
     runs-on: ubuntu-20.04
 
-    env:
-      TARGET: arm-unknown-linux-gnueabihf
-
     steps:
 
-      - name: Clone upstream source
-        uses: actions/checkout@v3
+      - name: QEMU build
+        uses: uraimo/run-on-arch-action@v2
         with:
-          repository: signalapp/libsignal
-          ref: v0.22.2
-
-      - name: Install Rust toolchain
-        run: rustup toolchain install nightly --profile minimal
-
-      - name: Install cross-rs
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
-      - name: cross-rs config
-        run: |
-          cat >> Cross.toml <<EOF
-          [build.env]
-          passthrough = ["CC=arm-linux-gnueabihf-gcc", "CXX=arm-linux-gnueabihf-g++", "CPATH=/usr/arm-linux-gnueabihf/include"]
-          EOF
-
-      - name: cross-rs build
-        run: |
-          export RUSTFLAGS='-C link-arg=-s'
-          export RUST_BACKTRACE=1
-          cross build --target $TARGET --release --verbose
+          arch: armv6
+          distro: bullseye
+          #githubToken: ${{ github.token }} # Not required, but speeds up builds by storing container images in a GitHub package registry.
+          run: |
+            uname -a
+            # Install required packages
+            apt-get update && apt-get install -y git python3 g++ clang libclang-dev cmake make protobuf-compiler curl file
+            # Install rust
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source $HOME/.cargo/env
+            rustup toolchain install nightly --profile minimal
+            # Clone upstream source
+            git clone https://github.com/signalapp/libsignal _repo_dir
+            cd _repo_dir
+            # Build
+            RUSTFLAGS='-C link-arg=-s' RUST_BACKTRACE=1 cargo build --release --verbose
