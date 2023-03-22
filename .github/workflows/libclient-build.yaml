@@ -22,37 +22,21 @@ jobs:
           repository: signalapp/libsignal
           ref: v0.22.2
 
-      - name: Install RPi tools
-        run: |
-          git clone --depth=1 https://github.com/raspberrypi/tools _rpi_tools
-          sudo cp -r  _rpi_tools/arm-bcm2708/arm-linux-gnueabihf/* /usr/
-          ls -la /usr/arm-linux-gnueabihf
-          arm-linux-gnueabihf-gcc -v
-
       - name: Install Rust toolchain
         run: rustup toolchain install nightly --profile minimal
 
-      - name: Add target to rust toolchain
-        run: rustup target add $TARGET
+      - name: Install cross-rs
+        run: cargo install cross --git https://github.com/cross-rs/cross
 
-      - name: Add linker to cargo config
-        # Alternatively can add to rust flags
-          #RUSTFLAGS: -C linker=${{ matrix.build-env.linker }}
-        env:
-          LINKER: arm-linux-gnueabihf-gcc
+      - name: cross-rs config
         run: |
-          cat >>~/.cargo/config <<EOF
-          [target.$TARGET]
-          linker = "$LINKER"
+          cat >> Cross.toml <<EOF
+          [build.env]
+          passthrough = ["CC=arm-linux-gnueabihf-gcc", "CXX=arm-linux-gnueabihf-g++", "CPATH=/usr/arm-linux-gnueabihf/include"]
           EOF
 
-      - name: Cargo build
-        env:
-          RUSTFLAGS: -C link-arg=-s
-          CARGO_FLAGS: -p libsignal-jni
-          BUILD_ENV_VARS: CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ CPATH=/usr/arm-linux-gnueabihf/include
+      - name: cross-rs build
         run: |
-          if [[ -n $TARGET ]]; then
-            export CARGO_BUILD_TARGET=$TARGET
-          fi
-          env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
+          export RUSTFLAGS='-C link-arg=-s'
+          export RUST_BACKTRACE=1
+          cross build --target $TARGET --release --verbose
