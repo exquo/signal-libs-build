@@ -1,232 +1,58 @@
 name: libsignal-build
 
 on:
-  workflow_dispatch:
-    inputs:
-      libsignal-ref:
-        description: The branch, tag or SHA to checkout for libsignal
-        default: ''  # Use the latest commit from the default branch
-  schedule:
-    - cron: '33 3 * * *'
-
-defaults:
-  run:
-    shell: bash   # Explicit for windows
-
+  push:
+    branches:
+      - 'armv6'
 
 jobs:
 
-  compare_releases:
-
-    outputs:
-      upstream_ver: ${{ steps.check_releases.outputs.upstream_ver }}
-      release_name: ${{ steps.check_releases.outputs.release_name }}
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Checkout this repo sources
-        uses: actions/checkout@v3
-
-      - name: Get libs data in json
-        id: dummy_matrix
-        run: python3 generate_matrix.py '0.0.0'
-
-      - name: Check the latest official version
-        id: check_releases
-        env:
-          MATRIX_JSON: ${{ steps.dummy_matrix.outputs.matrix }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          upstream_ver: ${{ github.event.inputs.libsignal-ref }}
-        run: |
-          LIB_REPO=$(echo "$MATRIX_JSON" | jq -j '.lib[].repo' )
-          echo "LIB_REPO = $LIB_REPO"
-          [ -n "$upstream_ver" ] || upstream_ver=$(bash util.sh get_latest_release_name "$LIB_REPO")
-          echo "upstream_ver=$upstream_ver" | tee -a $GITHUB_OUTPUT
-          release_name=$(bash util.sh release_name "$LIB_REPO" "$upstream_ver")
-          echo "release_name = $release_name"
-          this_repo_release=$(bash util.sh get_release_data "$release_name")
-          [ -z "$this_repo_release" ] || release_name=''
-          echo "release_name=$release_name" >> $GITHUB_OUTPUT
-
-
-  new_release:
-
-    needs:
-      - compare_releases
-
-    if: ${{ needs.compare_releases.outputs.release_name }}
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Checkout this repo sources
-        uses: actions/checkout@v3
-
-      - name: Create a new release
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-          TAG_NAME: ${{ needs.compare_releases.outputs.release_name }}
-        run: |
-          gh release create \
-            --target "$GITHUB_REF_NAME" \
-            -n "Produced by GitHub actions run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
-             "$TAG_NAME"
-
-
-  matrix_setup:
-    needs:
-      - new_release
-      - compare_releases
-
-    outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Checkout this repo sources
-        uses: actions/checkout@v3
-
-      - name: Generate matrix
-        id: matrix
-        env:
-          LIBSIGNAL_VERSION: ${{ needs.compare_releases.outputs.upstream_ver }}
-        run: python3 generate_matrix.py "$LIBSIGNAL_VERSION"
-
-
   build:
 
-    needs:
-      - matrix_setup
-      - compare_releases
-
-    strategy:
-      matrix: ${{ fromJSON(needs.matrix_setup.outputs.matrix) }}
-      fail-fast: false  # do not abort all if some of the builds fail
-
-    name: build_${{ matrix.cross.target || matrix.host.triple }}
-
-    runs-on: ${{ matrix.host.runner }}
+    runs-on: ubuntu-20.04
 
     env:
-      TARGET: ${{ matrix.cross.target }}
-      THIS_REPO_DIR: _this_repo_checkout
-
-    # Ref:
-      # Upstream workflow:
-        # https://github.com/signalapp/libsignal-client/blob/master/.github/workflows/build_and_test.yml
-      # Signal-cli wiki:
-        # https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal
+      TARGET: arm-unknown-linux-gnueabihf
 
     steps:
-
-      - name: Dump strategy and matrix contexts
-        run: |
-          echo '${{ toJSON(strategy) }}'
-          echo '${{ toJSON(matrix) }}'
-
-      - name: Checkout this repo sources
-        uses: actions/checkout@v3
-
-      - name: Generate file names for the current matrix item
-        id: filenames
-        run: python3 filename_for_matrix_item.py '${{ needs.matrix_setup.outputs.matrix }}' '${{ matrix.lib.name }}' '${{ matrix.host.runner }}' '${{ matrix.cross.target }}'
 
       - name: Clone upstream source
         uses: actions/checkout@v3
         with:
-          repository: ${{ matrix.lib.repo }}
-          ref: ${{ matrix.lib.ref }}
+          repository: signalapp/libsignal
+          ref: v0.22.2
+
+      - name: Install RPi tools
+        run: |
+          git clone --depth=1 https://github.com/raspberrypi/tools _rpi_tools
+          sudo cp -r  _rpi_tools/arm-bcm2708/arm-linux-gnueabihf/* /usr/
+          ls -la /usr/arm-linux-gnueabihf
+          arm-linux-gnueabihf-gcc -v
 
       - name: Install Rust toolchain
         run: rustup toolchain install nightly --profile minimal
-        # Why nightly: https://github.com/signalapp/libsignal/issues/141#issuecomment-1211192153
 
       - name: Add target to rust toolchain
-        if: ${{ matrix.cross.target }}
         run: rustup target add $TARGET
-
-      - name: Install required packages
-        if: ${{ matrix.host.req-pkg || matrix.cross.req-pkg }}
-        run: |
-          bash -c "$INSTALL_CMD $PKGS"
-        env:
-          INSTALL_CMD: ${{ matrix.host.install-cmd }}
-          PKGS: ${{ matrix.host.req-pkg }} ${{ matrix.cross.req-pkg }}
 
       - name: Add linker to cargo config
         # Alternatively can add to rust flags
-          #RUSTFLAGS: -C linker=${{ matrix.cross.linker }}
-        if: ${{ matrix.cross.linker }}
+          #RUSTFLAGS: -C linker=${{ matrix.build-env.linker }}
+        env:
+          LINKER: arm-linux-gnueabihf-gcc
         run: |
           cat >>~/.cargo/config <<EOF
           [target.$TARGET]
           linker = "$LINKER"
           EOF
-        env:
-          LINKER: ${{ matrix.cross.linker }}
-
-      - name: Setup rust cache
-        # On macos-latest cache does not work properly:
-          # https://github.com/actions/cache/issues/403
-          # https://github.com/rust-lang/cargo/issues/8603
-          # https://github.com/Swatinem/rust-cache
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-rust
-        with:
-          path: |
-            ~/.cargo
-            ./target
-          key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-
 
       - name: Cargo build
+        env:
+          RUSTFLAGS: -C link-arg=-s
+          CARGO_FLAGS: -p libsignal-jni
+          BUILD_ENV_VARS: CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ CPATH=/usr/arm-linux-gnueabihf/include
         run: |
           if [[ -n $TARGET ]]; then
             export CARGO_BUILD_TARGET=$TARGET
           fi
           env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
-        env:
-          RUSTFLAGS: -C link-arg=-s  ${{ matrix.host.rust-flags }} ${{ matrix.cross.rust-flags }}
-          CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
-          BUILD_ENV_VARS: ${{ matrix.host.build-env-vars }} ${{ matrix.cross.build-env-vars }}
-
-      - name: Inspect built file
-        env:
-          FILENAME: ${{ steps.filenames.outputs.lib_filename }}
-        working-directory: target/${{ matrix.cross.target }}/release
-        run: |
-          file $FILENAME
-          ldd $FILENAME || :
-          objdump -T $FILENAME | grep LIBC  || :
-          openssl sha256 $FILENAME
-
-      - name: Create archive
-        env:
-          DIR: target/${{ matrix.cross.target }}/release
-          FILENAME: ${{ steps.filenames.outputs.lib_filename }}
-          ARCHIVE_NAME: ${{ steps.filenames.outputs.archive_name }}
-        run: tar -czvf ${ARCHIVE_NAME}.tar.gz --directory ${DIR}  ${FILENAME}
-
-      - name: Checkout this repo (for gh cli)
-        uses: actions/checkout@v3
-        with:
-          path: ${{ env.THIS_REPO_DIR }}
-          clean: false
-
-      - name: Upload release asset
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ needs.compare_releases.outputs.release_name }}
-          FILENAME: ${{ steps.filenames.outputs.archive_name }}.tar.gz
-        working-directory: ${{ env.THIS_REPO_DIR }}
-        run: gh release upload "$TAG_NAME" "${GITHUB_WORKSPACE}/${FILENAME}"
