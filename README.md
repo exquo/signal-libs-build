@@ -33,7 +33,7 @@ This means that the resulting binaries can be used with confidence that they wer
 
 - `x86_64-linux-gnu`
 	Most desktop linuxes.
-	Works with `glibc` v2.18 and newer, so that Ubuntu 18.04, Debain 10 and CentOS 7 are supported. (Upstream releases are built with a more recent `glibc` version. See [signal-cli#643](https://github.com/AsamK/signal-cli/issues/643))
+	Debain 10 is supported (whereas the upstream releases are built on the latest Ubuntu and might require a newer `glibc` version; see [signal-cli#643](https://github.com/AsamK/signal-cli/issues/643)).
 - `x86_64-apple-darwin`
 	MacOS, Intel 64 bit.
 - `x86_64-pc-windows`
@@ -48,8 +48,6 @@ This means that the resulting binaries can be used with confidence that they wer
 	32 bit Linux.
 
 Tip: on \*nix, use `uname -m` to get your device's architecture.
-
-Suggestions for additional platforms are welcome - feel free to open an issue!
 
 
 ### Historical notes
