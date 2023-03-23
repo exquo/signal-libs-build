@@ -9,6 +9,7 @@ on:
   schedule:
     - cron: '33 3 * * *'
 
+
 defaults:
   run:
     shell: bash   # Explicit for windows
@@ -45,10 +46,9 @@ jobs:
           [ -n "$upstream_ver" ] || upstream_ver=$(bash util.sh get_latest_release_name "$LIB_REPO")
           echo "upstream_ver=$upstream_ver" | tee -a $GITHUB_OUTPUT
           release_name=$(bash util.sh release_name "$LIB_REPO" "$upstream_ver")
-          echo "release_name = $release_name"
           this_repo_release=$(bash util.sh get_release_data "$release_name")
           [ -z "$this_repo_release" ] || release_name=''
-          echo "release_name=$release_name" >> $GITHUB_OUTPUT
+          echo "release_name=$release_name" | tee -a $GITHUB_OUTPUT
 
 
   new_release:
@@ -79,6 +79,7 @@ jobs:
 
 
   matrix_setup:
+
     needs:
       - new_release
       - compare_releases
@@ -110,12 +111,13 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix_setup.outputs.matrix) }}
       fail-fast: false  # do not abort all if some of the builds fail
 
-    name: build_${{ matrix.cross.target || matrix.host.triple }}
+    name: build_${{ matrix.build-env.target || matrix.build-env.triple }}
 
-    runs-on: ${{ matrix.host.runner }}
+    runs-on: ${{ matrix.build-env.runner }}
+    container: ${{ matrix.build-env.container }}
 
     env:
-      TARGET: ${{ matrix.cross.target }}
+      TARGET: ${{ matrix.build-env.target }}
       THIS_REPO_DIR: _this_repo_checkout
 
     # Ref:
@@ -134,9 +136,19 @@ jobs:
       - name: Checkout this repo sources
         uses: actions/checkout@v3
 
+      - name: Install required packages
+        if: ${{ matrix.build-env.req-pkg }}
+        env:
+          INSTALL_CMD: ${{ matrix.build-env.install-cmd }}
+          PKGS: ${{ matrix.build-env.req-pkg }}
+        run: |
+          bash -c "$INSTALL_CMD $PKGS"
+
       - name: Generate file names for the current matrix item
         id: filenames
-        run: python3 filename_for_matrix_item.py '${{ needs.matrix_setup.outputs.matrix }}' '${{ matrix.lib.name }}' '${{ matrix.host.runner }}' '${{ matrix.cross.target }}'
+        env:
+          MATRIX_RUN: ${{ toJSON(matrix) }}
+        run: python3 filename_for_matrix_item.py "$MATRIX_RUN"
 
       - name: Clone upstream source
         uses: actions/checkout@v3
@@ -146,33 +158,26 @@ jobs:
 
       - name: Install Rust toolchain
         run: rustup toolchain install nightly --profile minimal
-        # Why nightly: https://github.com/signalapp/libsignal/issues/141#issuecomment-1211192153
+          # Why nightly: https://github.com/signalapp/libsignal/issues/141#issuecomment-1211192153
 
       - name: Add target to rust toolchain
-        if: ${{ matrix.cross.target }}
+        if: ${{ matrix.build-env.target }}
         run: rustup target add $TARGET
-
-      - name: Install required packages
-        if: ${{ matrix.host.req-pkg || matrix.cross.req-pkg }}
-        run: |
-          bash -c "$INSTALL_CMD $PKGS"
-        env:
-          INSTALL_CMD: ${{ matrix.host.install-cmd }}
-          PKGS: ${{ matrix.host.req-pkg }} ${{ matrix.cross.req-pkg }}
 
       - name: Add linker to cargo config
         # Alternatively can add to rust flags
-          #RUSTFLAGS: -C linker=${{ matrix.cross.linker }}
-        if: ${{ matrix.cross.linker }}
+          #RUSTFLAGS: -C linker=${{ matrix.build-env.linker }}
+        if: ${{ matrix.build-env.linker }}
+        env:
+          LINKER: ${{ matrix.build-env.linker }}
         run: |
-          cat >>~/.cargo/config <<EOF
+          cat >> ~/.cargo/config <<EOF
           [target.$TARGET]
           linker = "$LINKER"
           EOF
-        env:
-          LINKER: ${{ matrix.cross.linker }}
 
       - name: Setup rust cache
+        if: false   # Not using cache
         # On macos-latest cache does not work properly:
           # https://github.com/actions/cache/issues/403
           # https://github.com/rust-lang/cargo/issues/8603
@@ -184,40 +189,43 @@ jobs:
           path: |
             ~/.cargo
             ./target
-          key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
+          key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-${{ matrix.lib.name }}-
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.cross.target }}-
+            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-${{ matrix.lib.name }}-
+            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-
 
       - name: Cargo build
+        env:
+          RUSTFLAGS: -C link-arg=-s  ${{ matrix.build-env.rust-flags }}
+          CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
+          BUILD_ENV_VARS: ${{ matrix.build-env.build-env-vars }}
         run: |
           if [[ -n $TARGET ]]; then
             export CARGO_BUILD_TARGET=$TARGET
           fi
           env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
-        env:
-          RUSTFLAGS: -C link-arg=-s  ${{ matrix.host.rust-flags }} ${{ matrix.cross.rust-flags }}
-          CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
-          BUILD_ENV_VARS: ${{ matrix.host.build-env-vars }} ${{ matrix.cross.build-env-vars }}
 
       - name: Inspect built file
         env:
           FILENAME: ${{ steps.filenames.outputs.lib_filename }}
-        working-directory: target/${{ matrix.cross.target }}/release
+        working-directory: target/${{ matrix.build-env.target }}/release
         run: |
           file $FILENAME
-          ldd $FILENAME || :
+          readelf --arch-specific $FILENAME  || :
+          ldd -v $FILENAME || :
           objdump -T $FILENAME | grep LIBC  || :
+          objdump -T $FILENAME  | grep LIBC | cut -d'_' -f2 | sort -V | tail -n1 | cut -d ' ' -f1 || :
           openssl sha256 $FILENAME
 
       - name: Create archive
         env:
-          DIR: target/${{ matrix.cross.target }}/release
+          DIR: target/${{ matrix.build-env.target }}/release
           FILENAME: ${{ steps.filenames.outputs.lib_filename }}
           ARCHIVE_NAME: ${{ steps.filenames.outputs.archive_name }}
         run: tar -czvf ${ARCHIVE_NAME}.tar.gz --directory ${DIR}  ${FILENAME}
 
-      - name: Checkout this repo (for gh cli)
+      - name: Checkout this repo
+          # (for gh cli)
         uses: actions/checkout@v3
         with:
           path: ${{ env.THIS_REPO_DIR }}
