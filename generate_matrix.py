@@ -31,19 +31,28 @@ hosts = {
                 "lib-suffix": ".so",
                 "triple": "x86_64-unknown-linux-gnu",
                 "install-cmd": "sudo apt-get update && sudo apt-get install",
+                "req-pkg": "protobuf-compiler"
+                } | {
+                ### Rust container on Debian 10
+                ### (libc: Deb-10's v2.28 vs Ubuntu-20.04 v2.31)
+                "container": "rust:buster",
+                "install-cmd": "bash ./util.sh add_deb_repos && apt-get update && apt-get install -y",
+                "req-pkg": "python3 clang libclang-dev cmake make gh protobuf-compiler/buster-backports",
                 },
         "macos": {
                 "runner": "macos-latest",
                 "lib-prefix": "lib",
                 "lib-suffix": ".dylib",
                 "triple": "x86_64-apple-darwin",
+                "install-cmd": "brew install",
+                "req-pkg": "protobuf",
             },
         "windows": {
                 "runner": "windows-latest",
                 "lib-suffix": ".dll",
                 "triple": "x86_64-pc-windows",
                 "install-cmd": "choco install",
-                "req-pkg": "nasm",  # for boringssl
+                "req-pkg": "nasm protoc",  # nasm: for boringssl
                 "rust-flags": "-C target-feature=+crt-static",
                     # Static linking to remove MSVC dependendency. See:
                     # zkgroup/ffi/node/Makefile
@@ -57,7 +66,10 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     cross_dict = {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
             "req-pkg": " ".join((
-                f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
+                host_dict["req-pkg"],
+                " ".join((
+                    f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
+                    )),
                 )),
             "linker": f"{arch}-{sys_os}-{env}-{compilers['C']}",
             "build-env-vars": " ".join((
@@ -69,12 +81,7 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     return host_dict | cross_dict
 
 build_envs = [
-        hosts["linux"] | {
-            ### Rust container on Debian 10
-            "container": "rust:buster",
-            "install-cmd": "bash ./util.sh add_gh_ppa && apt-get update && apt-get install -y",
-            "req-pkg": "python3 clang libclang-dev cmake make gh",
-            },
+        hosts["linux"],
         hosts["macos"],
         hosts["windows"],
         ### Cross-compiling ###

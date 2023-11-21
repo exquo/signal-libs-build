@@ -128,12 +128,17 @@ gradle_deps_vers () {
 		done
 }
 
-add_gh_ppa() {
+add_deb_repos() {
+	# Installing GitHub CLI `gh` on Debian container
 	# From https://github.com/cli/cli/blob/trunk/docs/install_linux.md, sans `sudo` (for docker)
 	type -p curl >/dev/null || apt install curl -y
 	curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
 	&& chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
 	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+
+	# For installing newer protobuf-compiler than available on Debian 10 (buster)
+	# Need protoc>v3.12.0, or get "protoc failed: Unknown flag: --experimental_allow_proto3_optional"
+	echo "deb http://deb.debian.org/debian buster-backports main" > /etc/apt/sources.list.d/buster-backports.list
 }
 
 "$@"

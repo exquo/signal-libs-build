@@ -171,7 +171,7 @@ jobs:
         env:
           LINKER: ${{ matrix.build-env.linker }}
         run: |
-          cat >> ~/.cargo/config <<EOF
+          cat >> $CARGO_HOME/config.toml <<EOF
           [target.$TARGET]
           linker = "$LINKER"
           EOF
