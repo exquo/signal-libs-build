@@ -28,7 +28,7 @@ jobs:
     steps:
 
       - name: Checkout this repo sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get libs data in json
         id: dummy_matrix
@@ -63,7 +63,7 @@ jobs:
     steps:
 
       - name: Checkout this repo sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create a new release
         id: create_release
@@ -92,7 +92,7 @@ jobs:
     steps:
 
       - name: Checkout this repo sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Generate matrix
         id: matrix
@@ -134,7 +134,7 @@ jobs:
           echo '${{ toJSON(matrix) }}'
 
       - name: Checkout this repo sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install required packages
         if: ${{ matrix.build-env.req-pkg }}
@@ -151,7 +151,7 @@ jobs:
         run: python3 filename_for_matrix_item.py "$MATRIX_RUN"
 
       - name: Clone upstream source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ matrix.lib.repo }}
           ref: ${{ matrix.lib.ref }}
@@ -182,7 +182,7 @@ jobs:
           # https://github.com/actions/cache/issues/403
           # https://github.com/rust-lang/cargo/issues/8603
           # https://github.com/Swatinem/rust-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-rust
         with:
@@ -226,7 +226,7 @@ jobs:
 
       - name: Checkout this repo
           # (for gh cli)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: ${{ env.THIS_REPO_DIR }}
           clean: false
