@@ -25,7 +25,7 @@ libs = {
         }
 
 hosts = {
-        "linux": {
+        "linux-gnu": {
                 "runner": "ubuntu-20.04",
                 "lib-prefix": "lib",
                 "lib-suffix": ".so",
@@ -38,6 +38,8 @@ hosts = {
                 "container": "rust:buster",
                 "install-cmd": "bash ./util.sh add_deb_repos && apt-get update && apt-get install -y",
                 "req-pkg": "python3 clang libclang-dev cmake make gh protobuf-compiler/buster-backports",
+                    # From libsignal-client/java/Dockerfile:
+                    # > clang and libclang are used by boring-sys's bindgen; otherwise we could use plain old gcc and g++.
                 },
         "macos": {
                 "runner": "macos-latest",
@@ -58,37 +60,56 @@ hosts = {
                     # zkgroup/ffi/node/Makefile
                     # libsignal-client/node/build_node_bridge.py
                 },
+        "linux-musl": {
+                "runner": "ubuntu-latest",
+                "container": "rust:alpine",
+                "lib-prefix": "lib",
+                "lib-suffix": ".so",
+                "triple": "x86_64-unknown-linux-musl",
+                "install-cmd": "apk update && apk add",
+                "req-pkg": "git bash python3 tar github-cli build-base gcc g++ clang clang-dev cmake make protobuf file openssl",
+                "rust-flags": "-C target-feature=-crt-static",
+                    # …-musl target linked statically by default
+                    ## alt: use CARGO_CFG_TARGET_FEATURE env var
+                #"cargo-flags": "--target=x86_64-unknown-linux-musl",
+                },
         }
 
-def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None):
+def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None, host_dict=None):
     compilers = compilers or {"C": "gcc", "C++": "g++"}
-    host_dict = hosts.get(sys_os, {})
+    host_dict = host_dict or hosts.get(f"{sys_os}-{env}", {})
+    cc =  f"{arch}-{sys_os}-{env}-{compilers['C']}"
+    cxx = f"{arch}-{sys_os}-{env}-{compilers['C++']}"
+    pkgs = " ".join((
+        f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
+        )) if "apt-get" in host_dict["install-cmd"] else " ".join((
+            cc, cxx
+            ))
     cross_dict = {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
             "req-pkg": " ".join((
                 host_dict["req-pkg"],
-                " ".join((
-                    f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
-                    )),
+                pkgs,
                 )),
-            "linker": f"{arch}-{sys_os}-{env}-{compilers['C']}",
+            "linker": cc,
             "build-env-vars": " ".join((
-                f"CC={arch}-{sys_os}-{env}-{compilers['C']}",
-                f"CXX={arch}-{sys_os}-{env}-{compilers['C++']}",
+                f"CC={cc}",
+                f"CXX={cxx}",
                 f"CPATH=/usr/{arch}-{sys_os}-{env}/include",
                 )),
             }
     return host_dict | cross_dict
 
 build_envs = [
-        hosts["linux"],
-        hosts["macos"],
-        hosts["windows"],
-        ### Cross-compiling ###
-        cross_template("aarch64"),
-        cross_template("arm", "v7", "gnueabihf"),
-        cross_template("i686"),
-        hosts["macos"] | {"target": "aarch64-apple-darwin"},
+        #hosts["linux"],
+        #hosts["macos"],
+        #hosts["windows"],
+        #### Cross-compiling ###
+        #cross_template("aarch64"),
+        #cross_template("arm", "v7", "gnueabihf"),
+        #cross_template("i686"),
+        #hosts["macos"] | {"target": "aarch64-apple-darwin"},
+        hosts["linux-musl"],
         ]
 
 
