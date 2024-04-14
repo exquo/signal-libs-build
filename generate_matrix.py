@@ -12,11 +12,11 @@ print(sys.argv)
 libs_ver= {"boring": "libsignal"}
 
 libs = {
-        "libsignal": {
-            "repo": "signalapp/libsignal",
-            "filename": "signal_jni",
-            "cargo-flags": "-p libsignal-jni",
-            },
+        #"libsignal": {
+            #"repo": "signalapp/libsignal",
+            #"filename": "signal_jni",
+            #"cargo-flags": "-p libsignal-jni",
+            #},
         "boring": {
             #"repo": "cloudflare/boring",
             "repo": "signalapp/boring",
@@ -85,9 +85,10 @@ hosts = {
                 "lib-prefix": "lib",
                 "lib-suffix": ".a",
                 "triple": "x86_64-unknown-linux-musl",
+                    # statically linked by default
                 "install-cmd": "apk update && apk add",
                 "req-pkg": "git bash python3 tar clang clang-dev clang-static llvm-dev llvm-static gcc g++ cmake make protobuf zlib-dev zlib-static ncurses-dev ncurses-static",
-                "rust-flags": "-C target-feature=+crt-static",
+                #"rust-flags": "-C target-feature=+crt-static",
                 #"rust-flags": "-C link-arg=-L/usr/lib/llvm17/lib"
                 #"cargo-flags": "--target=x86_64-unknown-linux-musl",
                 ##"cargo-flags": "--crate-type=staticlib",
