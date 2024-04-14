@@ -200,6 +200,10 @@ jobs:
             ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-${{ matrix.lib.name }}-
             ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-
 
+      - name: git submodule DEBUG
+        run:
+          git config --global --add safe.directory /__w/signal-libs-build/signal-libs-build
+
       - name: Cargo build
         env:
           RUSTFLAGS: -C link-arg=-s  ${{ matrix.build-env.rust-flags }}
