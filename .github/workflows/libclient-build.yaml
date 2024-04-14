@@ -156,6 +156,12 @@ jobs:
           repository: ${{ matrix.lib.repo }}
           ref: ${{ matrix.lib.ref }}
 
+      - name: Install musl-cross
+        run: |
+          curl -OLv https://musl.cc/aarch64-linux-musl-cross.tgz
+          tar -xzf aarch64-linux-musl-cross.tgz
+          ./aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc --version
+
       - name: Install Rust toolchain
         run: rustup toolchain install nightly --profile minimal
           # Why nightly: https://github.com/signalapp/libsignal/issues/141#issuecomment-1211192153
@@ -194,10 +200,6 @@ jobs:
             ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-${{ matrix.lib.name }}-
             ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-
 
-      - name: Bindgen feature static
-        run:
-          sed  -i 's/^bindgen = .*/bindgen = { default-features = false, features = ["static"] }/' boring-sys/Cargo.toml
-
       - name: Cargo build
         env:
           RUSTFLAGS: -C link-arg=-s  ${{ matrix.build-env.rust-flags }}
@@ -207,14 +209,9 @@ jobs:
           if [ -n "$TARGET" ]; then
             export CARGO_BUILD_TARGET=$TARGET
           fi
-          # Debug LLVM
-          cargo tree -e features
-          echo "LIBRARY_PATH = $LIBRARY_PATH"
-          export LIBRARY_PATH=$(llvm-config --libdir)
-          echo "LIBRARY_PATH = $LIBRARY_PATH"
-          ls -la "$LIBRARY_PATH"
-          llvm-config --libs
-          # / Debug LLVM
+          export PATH=$(realpath ./aarch64-linux-musl-cross/bin):$PATH
+          export CPATH=$(realpath ./aarch64-linux-musl-cross/include)
+          env $BUILD_ENV_VARS printenv CPATH | xargs ls -la
           env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
 
       - name: Inspect built file

@@ -94,6 +94,24 @@ hosts = {
                 ##"cargo-flags": "--crate-type=staticlib",
                     ## overriding the explicitly set `crate-type = ["cdylib"]` in libsignal-client/rust/bridge/jni/Cargo.toml
                 },
+        "linux-musl-cross": {
+                "runner": "ubuntu-latest",
+                "container": "rust:alpine",
+                "lib-prefix": "lib",
+                "lib-suffix": ".so",
+                "triple": "x86_64-unknown-linux-musl",
+                "install-cmd": "apk update && apk add",
+                "req-pkg": "git bash python3 tar github-cli build-base gcc g++ clang clang-dev cmake make protobuf file openssl curl",
+                #"rust-flags": "-C target-feature=-crt-static",
+                "target": "aarch64-unknown-linux-musl",
+                "linker": "aarch64-linux-musl-gcc",
+                "build-env-vars": " ".join((
+                    f"CC=aarch64-linux-musl-gcc",
+                    f"CXX=aarch64-linux-musl-g++",
+                    #f"CPATH=/usr/{arch}-{sys_os}-{env}/include",
+                    f"CARGO_TARGET_{'aarch64-unknown-linux-musl'.replace('-', '_').upper()}_RUSTFLAGS=-Ctarget-feature=-crt-static",
+                    )),
+                },
         }
 
 def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None, host_dict=None):
@@ -131,7 +149,8 @@ build_envs = [
         #cross_template("i686"),
         #hosts["macos"] | {"target": "aarch64-apple-darwin"},
         #hosts["linux-musl"],
-        hosts["linux-musl-static"],
+        #hosts["linux-musl-static"],
+        hosts["linux-musl-cross"],
         ]
 
 
