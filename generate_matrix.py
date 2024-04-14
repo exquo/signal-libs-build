@@ -8,13 +8,19 @@ import util
 
 
 print(sys.argv)
-libs_ver= {"libsignal": sys.argv[1]}
+#libs_ver= {"libsignal": sys.argv[1]}
+libs_ver= {"boring": "libsignal"}
 
 libs = {
         "libsignal": {
             "repo": "signalapp/libsignal",
             "filename": "signal_jni",
             "cargo-flags": "-p libsignal-jni",
+            },
+        "boring": {
+            #"repo": "cloudflare/boring",
+            "repo": "signalapp/boring",
+            "filename": "boring",
             },
         #"zkgroup": {
             ### UPD: zkgroup is included in libsignal-client v0.10.0, and is no longer a dependency in libsignal-service-java
@@ -73,6 +79,20 @@ hosts = {
                     ## alt: use CARGO_CFG_TARGET_FEATURE env var
                 #"cargo-flags": "--target=x86_64-unknown-linux-musl",
                 },
+        "linux-musl-static": {
+                "runner": "ubuntu-latest",
+                "container": "rust:alpine",
+                "lib-prefix": "lib",
+                "lib-suffix": ".a",
+                "triple": "x86_64-unknown-linux-musl",
+                "install-cmd": "apk update && apk add",
+                "req-pkg": "git bash python3 tar clang clang-dev clang-static llvm-dev llvm-static gcc g++ cmake make protobuf zlib-dev zlib-static ncurses-dev ncurses-static",
+                "rust-flags": "-C target-feature=+crt-static",
+                #"rust-flags": "-C link-arg=-L/usr/lib/llvm17/lib"
+                #"cargo-flags": "--target=x86_64-unknown-linux-musl",
+                ##"cargo-flags": "--crate-type=staticlib",
+                    ## overriding the explicitly set `crate-type = ["cdylib"]` in libsignal-client/rust/bridge/jni/Cargo.toml
+                },
         }
 
 def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None, host_dict=None):
@@ -101,7 +121,7 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     return host_dict | cross_dict
 
 build_envs = [
-        #hosts["linux"],
+        #hosts["linux-gnu"],
         #hosts["macos"],
         #hosts["windows"],
         #### Cross-compiling ###
@@ -109,7 +129,8 @@ build_envs = [
         #cross_template("arm", "v7", "gnueabihf"),
         #cross_template("i686"),
         #hosts["macos"] | {"target": "aarch64-apple-darwin"},
-        hosts["linux-musl"],
+        #hosts["linux-musl"],
+        hosts["linux-musl-static"],
         ]
 
 
