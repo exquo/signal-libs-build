@@ -10,11 +10,6 @@ on:
     - cron: '33 3 * * *'
 
 
-defaults:
-  run:
-    shell: bash   # Explicit for windows
-
-
 jobs:
 
   compare_releases:
@@ -120,6 +115,10 @@ jobs:
       TARGET: ${{ matrix.build-env.target }}
       THIS_REPO_DIR: _this_repo_checkout
 
+    defaults:
+      run:
+        shell: sh   # Explicit for windows
+
     # Ref:
       # Upstream workflow:
         # https://github.com/signalapp/libsignal-client/blob/master/.github/workflows/build_and_test.yml
@@ -142,7 +141,7 @@ jobs:
           INSTALL_CMD: ${{ matrix.build-env.install-cmd }}
           PKGS: ${{ matrix.build-env.req-pkg }}
         run: |
-          bash -c "$INSTALL_CMD $PKGS"
+          sh -c "$INSTALL_CMD $PKGS"
 
       - name: Generate file names for the current matrix item
         id: filenames
@@ -200,7 +199,7 @@ jobs:
           CARGO_FLAGS: ${{ matrix.lib.cargo-flags }}
           BUILD_ENV_VARS: ${{ matrix.build-env.build-env-vars }}
         run: |
-          if [[ -n $TARGET ]]; then
+          if [ -n "$TARGET" ]; then
             export CARGO_BUILD_TARGET=$TARGET
           fi
           env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
@@ -212,7 +211,7 @@ jobs:
         run: |
           file $FILENAME
           readelf --arch-specific $FILENAME  || :
-          ldd -v $FILENAME || :
+          ldd -v $FILENAME || ldd $FILENAME || :
           objdump -T $FILENAME | grep LIBC  || :
           objdump -T $FILENAME  | grep LIBC | cut -d'_' -f2 | sort -V | tail -n1 | cut -d ' ' -f1 || :
           openssl sha256 $FILENAME

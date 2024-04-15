@@ -8,7 +8,7 @@ import util
 
 
 print(sys.argv)
-libs_ver= {"libsignal": sys.argv[1]}
+libs_ver = {"libsignal": sys.argv[1]}
 
 libs = {
         "libsignal": {
@@ -25,7 +25,7 @@ libs = {
         }
 
 hosts = {
-        "linux": {
+        "linux-gnu": {
                 "runner": "ubuntu-20.04",
                 "lib-prefix": "lib",
                 "lib-suffix": ".so",
@@ -58,6 +58,19 @@ hosts = {
                     # zkgroup/ffi/node/Makefile
                     # libsignal-client/node/build_node_bridge.py
                 },
+        "linux-musl": {
+                "runner": "ubuntu-latest",
+                "container": "rust:alpine",
+                "lib-prefix": "lib",
+                "lib-suffix": ".so",
+                "triple": "x86_64-unknown-linux-musl",
+                "install-cmd": "apk update && apk add",
+                "req-pkg": "git bash python3 tar github-cli build-base gcc g++ clang clang-dev cmake make protobuf file openssl",
+                "rust-flags": "-C target-feature=-crt-static",
+                    # …-musl target linked statically by default
+                    ## alt: use CARGO_CFG_TARGET_FEATURE env var
+                #"cargo-flags": "--target=x86_64-unknown-linux-musl",
+                },
         }
 
 def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None):
@@ -89,6 +102,8 @@ build_envs = [
         cross_template("arm", "v7", "gnueabihf"),
         cross_template("i686"),
         hosts["macos"] | {"target": "aarch64-apple-darwin"},
+        ### musl ###
+        hosts["linux-musl"],
         ]
 
 
