@@ -73,21 +73,26 @@ hosts = {
                 },
         }
 
-def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None):
+def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None, host_dict=None):
     compilers = compilers or {"C": "gcc", "C++": "g++"}
-    host_dict = hosts.get(sys_os, {})
+    host_dict = host_dict or hosts.get(f"{sys_os}-{'gnu' if env.startswith('gnu') else env}", {})
+    cc =  f"{arch}-{sys_os}-{env}-{compilers['C']}"
+    cxx = f"{arch}-{sys_os}-{env}-{compilers['C++']}"
+    pkgs = " ".join((
+        f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
+        )) if "apt-get" in host_dict["install-cmd"] else " ".join((
+            cc, cxx
+            ))
     cross_dict = {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
             "req-pkg": " ".join((
                 host_dict["req-pkg"],
-                " ".join((
-                    f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
-                    )),
+                pkgs,
                 )),
-            "linker": f"{arch}-{sys_os}-{env}-{compilers['C']}",
+            "linker": cc,
             "build-env-vars": " ".join((
-                f"CC={arch}-{sys_os}-{env}-{compilers['C']}",
-                f"CXX={arch}-{sys_os}-{env}-{compilers['C++']}",
+                f"CC={cc}",
+                f"CXX={cxx}",
                 f"CPATH=/usr/{arch}-{sys_os}-{env}/include",
                 )),
             }
