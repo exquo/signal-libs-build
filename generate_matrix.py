@@ -36,8 +36,10 @@ hosts = {
                 ### Rust container on Debian 10
                 ### (libc: Deb-10's v2.28 vs Ubuntu-20.04 v2.31)
                 "container": "rust:buster",
-                "install-cmd": "bash ./util.sh add_deb_repos && apt-get update && apt-get install -y",
-                "req-pkg": "python3 clang libclang-dev cmake make gh protobuf-compiler/buster-backports",
+                "install-cmd": "bash ./util.sh add_deb_repos && bash ./util.sh install_protobuf && apt-get update && apt-get install -y",
+                "req-pkg": "python3 clang libclang-dev cmake make gh",
+                    # > clang and libclang are used by boring-sys's bindgen; otherwise we could use plain old gcc and g++.
+                    # (libsignal-client/java/Dockerfile)
                 },
         "macos": {
                 "runner": "macos-latest",

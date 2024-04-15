@@ -138,7 +138,18 @@ add_deb_repos() {
 
 	# For installing newer protobuf-compiler than available on Debian 10 (buster)
 	# Need protoc>v3.12.0, or get "protoc failed: Unknown flag: --experimental_allow_proto3_optional"
-	echo "deb http://deb.debian.org/debian buster-backports main" > /etc/apt/sources.list.d/buster-backports.list
+	#echo "deb http://deb.debian.org/debian buster-backports main" > /etc/apt/sources.list.d/buster-backports.list
+		# buster-backports was moved to `archive`
+		# https://lists.debian.org/debian-devel-announce/2024/03/msg00003.html
+	#echo "deb http://archive.debian.org/debian buster-backports main" > /etc/apt/sources.list.d/buster-backports.list
+}
+
+install_protobuf() {
+	VER=${1:-21.12}
+	FNAME=protoc-${VER}-linux-x86_64.zip
+	curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${VER}/${FNAME}
+	unzip "$FNAME" -d /usr/local
+	protoc --version
 }
 
 "$@"
