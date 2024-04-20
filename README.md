@@ -46,6 +46,8 @@ This means that the resulting binaries can be used with confidence that they wer
 	Raspberry Pi 2; many SoC.
 - `i686-linux-gnu`
 	32 bit Linux.
+- `x86_64-linux-musl`
+	Alpine Linux, OpenWRT; see [note](https://github.com/exquo/signal-libs-build/issues/19#issuecomment-2067638410-permalink).
 
 Tip: on \*nix, use `uname -m` to get your device's architecture.
 
