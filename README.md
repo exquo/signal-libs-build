@@ -64,7 +64,7 @@ Tip: on \*nix, use `uname -m` to get your device's architecture.
 ### Similar projects
 
 - https://gitlab.com/packaging/libsignal-client
-- https://gitlab.com/signald/libraries/zkgroup 
+- https://gitlab.com/signald/libraries/libsignal-client
 - https://media.projektzentrisch.de/temp/signal-cli
 
 Manual builds for Raspberry Pi:
