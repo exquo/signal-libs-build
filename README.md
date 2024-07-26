@@ -33,7 +33,7 @@ This means that the resulting binaries can be used with confidence that they wer
 
 - `x86_64-linux-gnu`
 	Most desktop linuxes.
-	Debain 10 is supported (whereas the upstream releases are built on the latest Ubuntu and might require a newer `glibc` version; see [signal-cli#643](https://github.com/AsamK/signal-cli/issues/643)).
+	Supports `glibc` versions less recent than that required for the upstream releases, which are built on the latest Ubuntu (see [signal-cli#643](https://github.com/AsamK/signal-cli/issues/643)).
 - `x86_64-apple-darwin`
 	MacOS, Intel 64 bit.
 - `x86_64-pc-windows`
