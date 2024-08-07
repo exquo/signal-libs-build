@@ -85,8 +85,11 @@ hosts = {
 def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None, host_dict=None):
     compilers = compilers or {"C": "gcc", "C++": "g++"}
     host_dict = host_dict or hosts.get(f"{sys_os}-{'gnu' if env.startswith('gnu') else env}", {})
-    cc =  f"{arch}-{sys_os}-{env}-{compilers['C']}"
-    cxx = f"{arch}-{sys_os}-{env}-{compilers['C++']}"
+    #cc =  f"{arch}-{sys_os}-{env}-{compilers['C']}"
+    #cxx = f"{arch}-{sys_os}-{env}-{compilers['C++']}"
+    ### ARM toolchain
+    cc =  f"{arch}-none-{sys_os}-{env}-{compilers['C']}"
+    cxx = f"{arch}-none-{sys_os}-{env}-{compilers['C++']}"
     pkgs = " ".join((
         f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
         ))
@@ -106,12 +109,13 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     return host_dict | cross_dict
 
 build_envs = [
-        hosts["linux-gnu-rhel"],
+        #hosts["linux-gnu-rhel"],
         #hosts["linux-gnu"],
         #hosts["macos"],
         #hosts["windows"],
         ### Cross-compiling ###
         #cross_template("aarch64"),
+        cross_template("aarch64", host_dict=hosts["linux-gnu-rhel"]),
         #cross_template("arm", "v7", "gnueabihf"),
         #cross_template("i686"),
         #hosts["macos"] | {"target": "aarch64-apple-darwin"},

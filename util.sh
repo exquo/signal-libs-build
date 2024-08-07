@@ -166,8 +166,22 @@ install_rust () {
 	rustc --version; cargo --version; rustup --version;
 }
 
+download_arm_toolchain () {
+	ver=${1:-10.3-2021.07}
+	fbname=gcc-arm-$ver-x86_64-aarch64-none-linux-gnu
+	fname=$fbname.tar.xz
+	curl -LO https://developer.arm.com/-/media/Files/downloads/gnu-a/$ver/binrel/$fname
+	tar -xJf $fname
+	mv $fbname /usr/aarch64-linux-gnu
+	ls /usr/aarch64-linux-gnu/bin
+	export PATH=/usr/aarch64-linux-gnu/bin:$PATH
+	echo "/usr/aarch64-linux-gnu/bin" >> "$GITHUB_PATH"
+	aarch64-none-linux-gnu-gcc --version
+}
+
 install_dependencies_deb () {
 	install_protobuf
+	download_arm_toolchain
 }
 
 install_dependencies_rhel () {
