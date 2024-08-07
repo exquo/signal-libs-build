@@ -166,4 +166,8 @@ install_rust () {
 	rustc --version; cargo --version; rustup --version;
 }
 
+install_dependencies_deb () {
+	install_protobuf
+}
+
 "$@"

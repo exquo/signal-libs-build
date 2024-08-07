@@ -97,7 +97,7 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     return host_dict | cross_dict
 
 build_envs = [
-        hosts["linux-gnu"],
+        #hosts["linux-gnu"],
         #hosts["macos"],
         #hosts["windows"],
         ### Cross-compiling ###
