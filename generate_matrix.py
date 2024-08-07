@@ -28,7 +28,7 @@ hosts_common = {
         }
 
 hosts = {
-        "linux-gnu": {
+        "linux-gnu": hosts_common["linux"] | {
                 "container": "rust:bullseye",
                 "install-cmd": "apt-get update && apt-get install -y",
                 "req-pkg": "python3 unzip gcc g++ git clang libclang-dev cmake make",
