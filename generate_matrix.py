@@ -39,6 +39,15 @@ hosts = {
                     "PROTOBUF_VER=25.4",
                     )),
                 },
+        "linux-gnu-rhel": hosts_common["linux"] | {
+                "container": "rockylinux:8",
+                "install-cmd": "dnf -y upgrade && dnf -y install",
+                "req-pkg": "file git python3 unzip xz gcc gcc-c++ make cmake clang clang-libs",
+                "setup-cmds": "bash ./util.sh install_dependencies_rhel",
+                "setup-env": " ".join((
+                    "PROTOBUF_VER=25.4",
+                    )),
+                },
         "linux-musl": {
                 "runner": "ubuntu-latest",
                 "container": "rust:alpine",
@@ -97,11 +106,12 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     return host_dict | cross_dict
 
 build_envs = [
+        hosts["linux-gnu-rhel"],
         #hosts["linux-gnu"],
         #hosts["macos"],
         #hosts["windows"],
         ### Cross-compiling ###
-        cross_template("aarch64"),
+        #cross_template("aarch64"),
         #cross_template("arm", "v7", "gnueabihf"),
         #cross_template("i686"),
         #hosts["macos"] | {"target": "aarch64-apple-darwin"},
