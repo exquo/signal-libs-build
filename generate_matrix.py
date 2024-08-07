@@ -116,8 +116,8 @@ build_envs = [
         #hosts["windows"],
         ### Cross-compiling ###
         #cross_template("aarch64"),
+        cross_template("aarch64", host_dict=hosts["linux-gnu-rhel"]),
         #cross_template("arm", "v7", "gnueabihf"),
-        cross_template("arm", "v7", "gnueabihf", host_dict=hosts["linux-gnu-rhel"]),
         #cross_template("i686"),
         #hosts["macos"] | {"target": "aarch64-apple-darwin"},
         ### musl ###

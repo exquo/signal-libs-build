@@ -172,10 +172,11 @@ download_arm_toolchain () {
 	ver=${1:-8.2-2018.11}
 	#fbname=gcc-arm-$ver-x86_64-aarch64-none-linux-gnu
 	#fbname=gcc-arm-$ver-x86_64-arm-none-linux-gnueabihf
-	fbname=gcc-arm-$ver-x86_64-arm-linux-gnueabihf
+	#fbname=gcc-arm-$ver-x86_64-arm-linux-gnueabihf
+	fbname=gcc-arm-$ver-x86_64-aarch64-linux-gnu
 	fname=$fbname.tar.xz
-	#toolchain_path=/usr/aarch64-linux-gnu
-	toolchain_path=/usr/arm-linux-gnueabihf
+	toolchain_path=/usr/aarch64-linux-gnu
+	#toolchain_path=/usr/arm-linux-gnueabihf
 	#curl -LO https://developer.arm.com/-/media/Files/downloads/gnu-a/$ver/binrel/$fname
 	curl -LO https://developer.arm.com/-/media/Files/downloads/gnu-a/$ver/$fname
 	tar -xJf $fname
@@ -184,8 +185,9 @@ download_arm_toolchain () {
 	export PATH=$toolchain_path/bin:$PATH
 	echo "$toolchain_path/bin" >> "$GITHUB_PATH"
 	#aarch64-none-linux-gnu-gcc --version
+	aarch64-linux-gnu-gcc --version
 	#arm-none-linux-gnueabihf-gcc --version
-	arm-linux-gnueabihf-gcc --version
+	#arm-linux-gnueabihf-gcc --version
 }
 
 install_dependencies_deb () {
