@@ -168,20 +168,24 @@ install_rust () {
 
 download_arm_toolchain () {
 	#ver=${1:-10.3-2021.07}
-	ver=${1:-8.2-2019.01}
+	#ver=${1:-8.2-2019.01}
+	ver=${1:-8.2-2018.11}
 	#fbname=gcc-arm-$ver-x86_64-aarch64-none-linux-gnu
-	fbname=gcc-arm-$ver-x86_64-arm-none-linux-gnueabihf
+	#fbname=gcc-arm-$ver-x86_64-arm-none-linux-gnueabihf
+	fbname=gcc-arm-$ver-x86_64-arm-linux-gnueabihf
 	fname=$fbname.tar.xz
 	#toolchain_path=/usr/aarch64-linux-gnu
 	toolchain_path=/usr/arm-linux-gnueabihf
-	curl -LO https://developer.arm.com/-/media/Files/downloads/gnu-a/$ver/binrel/$fname
+	#curl -LO https://developer.arm.com/-/media/Files/downloads/gnu-a/$ver/binrel/$fname
+	curl -LO https://developer.arm.com/-/media/Files/downloads/gnu-a/$ver/$fname
 	tar -xJf $fname
 	mv $fbname $toolchain_path
 	ls $toolchain_path/bin
 	export PATH=$toolchain_path/bin:$PATH
 	echo "$toolchain_path/bin" >> "$GITHUB_PATH"
 	#aarch64-none-linux-gnu-gcc --version
-	arm-none-linux-gnueabihf-gcc --version
+	#arm-none-linux-gnueabihf-gcc --version
+	arm-linux-gnueabihf-gcc --version
 }
 
 install_dependencies_deb () {
