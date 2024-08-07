@@ -197,7 +197,7 @@ install_dependencies_deb () {
 install_dependencies_rhel () {
 	install_rust
 	install_protobuf
-	download_arm_toolchain
+	#download_arm_toolchain
 }
 
 

@@ -93,7 +93,10 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     #pkgs = " ".join((
         #f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
         #))
-    pkgs = "glibc-devel.i686"  # For gnu/stubs-32.h
+    if "dnf " in host_dict["install-cmd"]:
+        pkgs = "glibc-devel.i686 libgcc.i686 libstdc++-devel.i686"
+        cc = "gcc"
+        cxx = "g++"
     cross_dict = {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
             "req-pkg": " ".join((
@@ -104,7 +107,9 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
             "build-env-vars": " ".join((
                 f"CC={cc}",
                 f"CXX={cxx}",
-                f"CPATH=/usr/{arch}-{sys_os}-{env}/include",
+                #f"CPATH=/usr/{arch}-{sys_os}-{env}/include",
+                f"CFLAGS=-m32",
+                f"CXXFLAGS=-m32",
                 )),
             }
     return host_dict | cross_dict
@@ -116,9 +121,9 @@ build_envs = [
         #hosts["windows"],
         ### Cross-compiling ###
         #cross_template("aarch64"),
-        cross_template("aarch64", host_dict=hosts["linux-gnu-rhel"]),
         #cross_template("arm", "v7", "gnueabihf"),
         #cross_template("i686"),
+        cross_template("i686", host_dict=hosts["linux-gnu-rhel"]),
         #hosts["macos"] | {"target": "aarch64-apple-darwin"},
         ### musl ###
         #hosts["linux-musl"],
