@@ -93,12 +93,13 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     #pkgs = " ".join((
         #f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
         #))
+    pkgs = "glibc-devel.i686"  # For gnu/stubs-32.h
     cross_dict = {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
-            #"req-pkg": " ".join((
-                #host_dict["req-pkg"],
-                #pkgs,
-                #)),
+            "req-pkg": " ".join((
+                host_dict["req-pkg"],
+                pkgs,
+                )),
             "linker": cc,
             "build-env-vars": " ".join((
                 f"CC={cc}",
