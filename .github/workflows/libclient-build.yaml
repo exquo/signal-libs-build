@@ -4,11 +4,6 @@ on:
   push:
     branches:
       - "glibc-ver"
-  workflow_dispatch:
-    inputs:
-      libsignal-ref:
-        description: The branch, tag or SHA to checkout for libsignal
-        default: ''  # Use the latest commit from the default branch
 
 
 jobs:
