@@ -1,13 +1,14 @@
 name: libsignal-build
 
 on:
+  push:
+    branches:
+      - "glibc-ver"
   workflow_dispatch:
     inputs:
       libsignal-ref:
         description: The branch, tag or SHA to checkout for libsignal
         default: ''  # Use the latest commit from the default branch
-  schedule:
-    - cron: '33 3 * * *'
 
 
 jobs:
@@ -51,7 +52,8 @@ jobs:
     needs:
       - compare_releases
 
-    if: ${{ needs.compare_releases.outputs.release_name }}
+    if: false
+    #if: ${{ needs.compare_releases.outputs.release_name }}
 
     runs-on: ubuntu-latest
 
@@ -77,7 +79,7 @@ jobs:
   matrix_setup:
 
     needs:
-      - new_release
+      #- new_release
       - compare_releases
 
     outputs:
@@ -144,6 +146,14 @@ jobs:
         run: |
           sh -c "$INSTALL_CMD $PKGS"
 
+      - name: Run setup commands
+        if: ${{ matrix.build-env.setup-cmds }}
+        env:
+          SETUP_CMDS: ${{ matrix.build-env.setup-cmds }}
+          SETUP_ENV: ${{ matrix.build-env.setup-env }}
+        run: |
+          env -S "$SETUP_ENV" sh -c "$SETUP_CMDS"
+
       - name: Generate file names for the current matrix item
         id: filenames
         env:
@@ -176,24 +186,6 @@ jobs:
           linker = "$LINKER"
           EOF
 
-      - name: Setup rust cache
-        if: false   # Not using cache
-        # On macos-latest cache does not work properly:
-          # https://github.com/actions/cache/issues/403
-          # https://github.com/rust-lang/cargo/issues/8603
-          # https://github.com/Swatinem/rust-cache
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-rust
-        with:
-          path: |
-            ~/.cargo
-            ./target
-          key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-${{ matrix.lib.name }}-
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-
-
       - name: Cargo build
         env:
           RUSTFLAGS: -C link-arg=-s  ${{ matrix.build-env.rust-flags }}
@@ -203,7 +195,7 @@ jobs:
           if [ -n "$TARGET" ]; then
             export CARGO_BUILD_TARGET=$TARGET
           fi
-          env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
+          env -S "$BUILD_ENV_VARS" cargo build --release --verbose  $CARGO_FLAGS
 
       - name: Inspect built file
         env:
@@ -224,17 +216,23 @@ jobs:
           ARCHIVE_NAME: ${{ steps.filenames.outputs.archive_name }}
         run: tar -czvf ${ARCHIVE_NAME}.tar.gz --directory ${DIR}  ${FILENAME}
 
-      - name: Checkout this repo
-          # (for gh cli)
-        uses: actions/checkout@v4
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: ${{ env.THIS_REPO_DIR }}
-          clean: false
+          name: ${{ steps.filenames.outputs.archive_name }}
+          path: target/${{ matrix.build-env.target }}/release/${{ steps.filenames.outputs.lib_filename }}
 
-      - name: Upload release asset
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ needs.compare_releases.outputs.release_name }}
-          FILENAME: ${{ steps.filenames.outputs.archive_name }}.tar.gz
-        working-directory: ${{ env.THIS_REPO_DIR }}
-        run: gh release upload "$TAG_NAME" "${GITHUB_WORKSPACE}/${FILENAME}"
+      #- name: Checkout this repo
+          ## (for gh cli)
+        #uses: actions/checkout@v4
+        #with:
+          #path: ${{ env.THIS_REPO_DIR }}
+          #clean: false
+      #
+      #- name: Upload release asset
+        #env:
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          #TAG_NAME: ${{ needs.compare_releases.outputs.release_name }}
+          #FILENAME: ${{ steps.filenames.outputs.archive_name }}.tar.gz
+        #working-directory: ${{ env.THIS_REPO_DIR }}
+        #run: gh release upload "$TAG_NAME" "${GITHUB_WORKSPACE}/${FILENAME}"

@@ -7,37 +7,50 @@ import sys
 import util
 
 
-print(sys.argv)
-libs_ver = {"libsignal": sys.argv[1]}
+print(sys.argv, file=sys.stderr)
 
 libs = {
         "libsignal": {
-            "repo": "signalapp/libsignal",
-            "filename": "signal_jni",
-            "cargo-flags": "-p libsignal-jni",
-            },
-        #"zkgroup": {
-            ### UPD: zkgroup is included in libsignal-client v0.10.0, and is no longer a dependency in libsignal-service-java
-            #"repo": "signalapp/zkgroup",
-            #"jar_name": "zkgroup-java",
-            #"filename": "zkgroup",
-            #},
+                "repo": "signalapp/libsignal",
+                "ref": sys.argv[1],
+                "filename": "signal_jni",
+                "cargo-flags": "-p libsignal-jni",
+                },
+        }
+
+hosts_common = {
+        "linux": {
+                "runner": "ubuntu-latest",
+                "triple": "x86_64-unknown-linux-gnu",
+                "lib-prefix": "lib",
+                "lib-suffix": ".so",
+                }
         }
 
 hosts = {
         "linux-gnu": {
-                "runner": "ubuntu-20.04",
-                "lib-prefix": "lib",
-                "lib-suffix": ".so",
-                "triple": "x86_64-unknown-linux-gnu",
-                "install-cmd": "sudo apt-get update && sudo apt-get install",
-                "req-pkg": "protobuf-compiler"
-                } | {
                 "container": "rust:bullseye",
-                "install-cmd": "bash ./util.sh add_deb_repos && bash ./util.sh install_protobuf && apt-get update && apt-get install -y",
-                "req-pkg": "python3 clang libclang-dev cmake make gh",
+                "install-cmd": "apt-get update && apt-get install -y",
+                "req-pkg": "python3 unzip gcc g++ git clang libclang-dev cmake make",
                     # "clang and libclang are used by boring-sys's bindgen; otherwise we could use plain old gcc and g++"
                     # (libsignal-client/java/Dockerfile)
+                "setup-cmds": "bash ./util.sh install_dependencies_deb",
+                "setup-env": " ".join((
+                    "PROTOBUF_VER=25.4",
+                    )),
+                },
+        "linux-musl": {
+                "runner": "ubuntu-latest",
+                "container": "rust:alpine",
+                "lib-prefix": "lib",
+                "lib-suffix": ".so",
+                "triple": "x86_64-unknown-linux-musl",
+                "install-cmd": "apk update && apk add",
+                "req-pkg": "git bash python3 tar github-cli build-base gcc g++ clang clang-dev cmake make protobuf file openssl",
+                "rust-flags": "-C target-feature=-crt-static",
+                    # …-musl target linked statically by default
+                    ## alt: use CARGO_CFG_TARGET_FEATURE env var
+                #"cargo-flags": "--target=x86_64-unknown-linux-musl",
                 },
         "macos": {
                 "runner": "macos-latest",
@@ -58,19 +71,6 @@ hosts = {
                     # zkgroup/ffi/node/Makefile
                     # libsignal-client/node/build_node_bridge.py
                 },
-        "linux-musl": {
-                "runner": "ubuntu-latest",
-                "container": "rust:alpine",
-                "lib-prefix": "lib",
-                "lib-suffix": ".so",
-                "triple": "x86_64-unknown-linux-musl",
-                "install-cmd": "apk update && apk add",
-                "req-pkg": "git bash python3 tar github-cli build-base gcc g++ clang clang-dev cmake make protobuf file openssl",
-                "rust-flags": "-C target-feature=-crt-static",
-                    # …-musl target linked statically by default
-                    ## alt: use CARGO_CFG_TARGET_FEATURE env var
-                #"cargo-flags": "--target=x86_64-unknown-linux-musl",
-                },
         }
 
 def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None, host_dict=None):
@@ -80,9 +80,7 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     cxx = f"{arch}-{sys_os}-{env}-{compilers['C++']}"
     pkgs = " ".join((
         f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
-        )) if "apt-get" in host_dict["install-cmd"] else " ".join((
-            cc, cxx
-            ))
+        ))
     cross_dict = {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
             "req-pkg": " ".join((
@@ -100,20 +98,17 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
 
 build_envs = [
         hosts["linux-gnu"],
-        hosts["macos"],
-        hosts["windows"],
+        #hosts["macos"],
+        #hosts["windows"],
         ### Cross-compiling ###
         cross_template("aarch64"),
-        cross_template("arm", "v7", "gnueabihf"),
-        cross_template("i686"),
-        hosts["macos"] | {"target": "aarch64-apple-darwin"},
+        #cross_template("arm", "v7", "gnueabihf"),
+        #cross_template("i686"),
+        #hosts["macos"] | {"target": "aarch64-apple-darwin"},
         ### musl ###
-        hosts["linux-musl"],
+        #hosts["linux-musl"],
         ]
 
-
-for lib_name, lib_ver in libs_ver.items():
-    libs[lib_name]["ref"] = lib_ver
 
 matrix = {
         "lib": list(libs.values()),
@@ -122,7 +117,7 @@ matrix = {
         }
 
 jobs_total = len(libs) * len(build_envs) + len(matrix.get("include", []))
-print("Total num of jobs:", jobs_total)
+print("Total num of jobs:", jobs_total, file=sys.stderr)
 
 pprint.pprint(matrix)
 util.gha_set_output_param("matrix", json.dumps(matrix))
