@@ -90,15 +90,15 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     ### ARM toolchain
     cc =  f"{arch}-none-{sys_os}-{env}-{compilers['C']}"
     cxx = f"{arch}-none-{sys_os}-{env}-{compilers['C++']}"
-    pkgs = " ".join((
-        f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
-        ))
+    #pkgs = " ".join((
+        #f"{compiler}-{arch}-{sys_os}-{env}" for compiler in compilers.values()
+        #))
     cross_dict = {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
-            "req-pkg": " ".join((
-                host_dict["req-pkg"],
-                pkgs,
-                )),
+            #"req-pkg": " ".join((
+                #host_dict["req-pkg"],
+                #pkgs,
+                #)),
             "linker": cc,
             "build-env-vars": " ".join((
                 f"CC={cc}",
