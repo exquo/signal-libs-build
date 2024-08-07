@@ -168,7 +168,6 @@ install_rust () {
 
 download_arm_toolchain () {
 	#ver=${1:-10.3-2021.07}
-	#ver=${1:-9.2-2019.12}
 	ver=${1:-8.2-2019.01}
 	#fbname=gcc-arm-$ver-x86_64-aarch64-none-linux-gnu
 	fbname=gcc-arm-$ver-x86_64-arm-none-linux-gnueabihf
