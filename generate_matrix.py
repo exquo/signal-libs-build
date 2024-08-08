@@ -82,6 +82,20 @@ hosts = {
                 },
         }
 
+zig_target_glibc_ver = "2.28"
+hosts["linux-gnu-zig"] = hosts["linux-gnu"] | {
+        "target": "x86_64-unknown-linux-gnu",
+        "linker": "zcc",
+        "build-env-vars": " ".join((
+            "CC=zcc",
+            "CXX=zxx",
+            )),
+        "setup-env": " ".join((
+            hosts["linux-gnu"]["setup-env"],
+            f"ZIG_TARGET=x86_64-linux-gnu.{zig_target_glibc_ver}",
+            )),
+        }
+
 def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", compilers=None, host_dict=None):
     compilers = compilers or {"C": "gcc", "C++": "g++"}
     host_dict = host_dict or hosts.get(f"{sys_os}-{'gnu' if env.startswith('gnu') else env}", {})
@@ -115,6 +129,7 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
     return host_dict | cross_dict
 
 build_envs = [
+        hosts["linux-gnu-zig"],
         #hosts["linux-gnu-rhel"],
         #hosts["linux-gnu"],
         #hosts["macos"],
@@ -123,7 +138,7 @@ build_envs = [
         #cross_template("aarch64"),
         #cross_template("arm", "v7", "gnueabihf"),
         #cross_template("i686"),
-        cross_template("i686", host_dict=hosts["linux-gnu-rhel"]),
+        #cross_template("i686", host_dict=hosts["linux-gnu-rhel"]),
         #hosts["macos"] | {"target": "aarch64-apple-darwin"},
         ### musl ###
         #hosts["linux-musl"],

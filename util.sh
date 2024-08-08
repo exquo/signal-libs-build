@@ -190,8 +190,29 @@ download_arm_toolchain () {
 	#arm-linux-gnueabihf-gcc --version
 }
 
+install_zig () {
+	ver=${1:-0.13.0}
+	fbname=zig-linux-x86_64-$ver
+	fname=$fbname.tar.xz
+	url=https://ziglang.org/download/$ver/$fname
+	curl -LO --retry 3 "$url"
+	tar -xJf "$fname" -C /opt
+	zig_dir=/opt/$fbname
+	ln -s $(realpath $zig_dir/zig) /usr/local/bin/
+	zig version
+	# Need to create a wrapper script, as CMake doesn't seem to handle spaces in $CC env var. https://github.com/ziglang/zig/issues/8716
+	echo '#!/bin/sh' > /usr/local/bin/zcc
+	echo 'zig cc -v $@ -target' "$ZIG_TARGET" >> /usr/local/bin/zcc
+	# `-target $ZIG_TARGET` needs to be passed after other args ($@), so that it would override the target from CMake, which has 4 fields; zig targets has 3, omitting the "vendor" (usually "unknown"). https://github.com/ziglang/zig/issues/4911
+	echo '#!/bin/sh' > /usr/local/bin/zxx
+	echo 'zig c++ -v $@ -target' "$ZIG_TARGET" >> /usr/local/bin/zxx
+	chmod +x /usr/local/bin/zcc /usr/local/bin/zxx
+	type -p z{cc,xx}
+}
+
 install_dependencies_deb () {
 	install_protobuf
+	install_zig
 }
 
 install_dependencies_rhel () {
