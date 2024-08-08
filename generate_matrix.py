@@ -118,6 +118,8 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
 def host_template_zig(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", host_dict=None, glibc_ver=None):
     host_dict = host_dict or hosts.get(f"{sys_os}-{'gnu' if env.startswith('gnu') else env}", {})
     zig_target = f"{arch}-{sys_os}-{env}"
+    if arch == "i686":
+        zig_target = f"i386-{sys_os}-{env}"
     if glibc_ver is not None:
         zig_target += f".{glibc_ver}"
     pkgs = ""
