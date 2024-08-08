@@ -82,7 +82,7 @@ hosts = {
                 },
         }
 
-zig_target_glibc_ver = "2.28"
+zig_target_glibc_ver = "2.17"
 hosts["linux-gnu-zig"] = hosts["linux-gnu"] | {
         "target": "x86_64-unknown-linux-gnu",
         "linker": "zcc",
