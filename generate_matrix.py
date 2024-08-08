@@ -119,12 +119,22 @@ def host_template_zig(arch, subarch="", env="gnu", vendor="unknown", sys_os="lin
     zig_target = f"{arch}-{sys_os}-{env}"
     if glibc_ver is not None:
         zig_target += f".{glibc_ver}"
+    pkgs = ""
+    if "64" not in arch:
+        if "apt-get " in host_dict["install-cmd"]:
+            pkgs += " gcc-multilib"
+        elif "dnf " in host_dict["install-cmd"]:
+            pkgs += " glibc-devel.i686"
     return host_dict | {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
             "linker": "zcc",
             "build-env-vars": " ".join((
                 "CC=zcc",
                 "CXX=zxx",
+                )),
+            "req-pkg": " ".join((
+                host_dict["req-pkg"],
+                pkgs,
                 )),
             "setup-cmds": " && ".join((
                 host_dict["setup-cmds"],
@@ -138,7 +148,7 @@ def host_template_zig(arch, subarch="", env="gnu", vendor="unknown", sys_os="lin
 
 
 build_envs = [
-        host_template_zig("aarch64", host_dict=hosts["linux-gnu-rhel"])
+        host_template_zig("arm", "v7", "gnueabihf", host_dict=hosts["linux-gnu-rhel"])
         #hosts["linux-gnu-rhel"],
         #hosts["linux-gnu"],
         #hosts["macos"],
