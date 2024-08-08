@@ -207,7 +207,7 @@ install_zig () {
 	echo '#!/bin/sh' > /usr/local/bin/zxx
 	echo 'zig c++ -v $@ -target' "$ZIG_TARGET" >> /usr/local/bin/zxx
 	chmod +x /usr/local/bin/zcc /usr/local/bin/zxx
-	type -p z{cc,xx}
+	cat $(type -p z{cc,xx})
 }
 
 install_dependencies_deb () {

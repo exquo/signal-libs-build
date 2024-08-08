@@ -148,7 +148,7 @@ build_envs = [
         #hosts["macos"],
         #hosts["windows"],
         ### Cross-compiling ###
-        cross_template_zig("aarch64")
+        cross_template_zig("arm", "v7", "gnueabihf"),
         #cross_template("aarch64"),
         #cross_template("arm", "v7", "gnueabihf"),
         #cross_template("i686"),
