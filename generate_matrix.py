@@ -128,13 +128,27 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
             }
     return host_dict | cross_dict
 
+def cross_template_zig(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux", glibc_ver=None):
+    zig_target = f"{arch}-{sys_os}-{env}"
+    if glibc_ver is not None:
+        zig_target += f".{glibc_ver}"
+    return hosts["linux-gnu-zig"] | {
+            "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
+            "setup-env": " ".join((
+                hosts["linux-gnu"]["setup-env"],
+                f"ZIG_TARGET={zig_target}",
+                )),
+            }
+
+
 build_envs = [
-        hosts["linux-gnu-zig"],
+        #hosts["linux-gnu-zig"],
         #hosts["linux-gnu-rhel"],
         #hosts["linux-gnu"],
         #hosts["macos"],
         #hosts["windows"],
         ### Cross-compiling ###
+        cross_template_zig("aarch64")
         #cross_template("aarch64"),
         #cross_template("arm", "v7", "gnueabihf"),
         #cross_template("i686"),
