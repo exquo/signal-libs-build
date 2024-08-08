@@ -12,7 +12,8 @@ print(sys.argv, file=sys.stderr)
 libs = {
         "libsignal": {
                 "repo": "signalapp/libsignal",
-                "ref": sys.argv[1],
+                #"ref": sys.argv[1],
+                "ref": "v0.52.2",
                 "filename": "signal_jni",
                 "cargo-flags": "-p libsignal-jni",
                 },
@@ -148,7 +149,7 @@ def host_template_zig(arch, subarch="", env="gnu", vendor="unknown", sys_os="lin
 
 
 build_envs = [
-        host_template_zig("arm", "v7", "gnueabihf")
+        host_template_zig("i686", glibc_ver="2.28")
         #hosts["linux-gnu-rhel"],
         #hosts["linux-gnu"],
         #hosts["macos"],
