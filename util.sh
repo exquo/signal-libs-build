@@ -212,7 +212,6 @@ install_zig () {
 
 install_dependencies_deb () {
 	install_protobuf
-	install_zig
 }
 
 install_dependencies_rhel () {
