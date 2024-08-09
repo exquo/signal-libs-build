@@ -106,7 +106,6 @@ build_envs = [
         cross_template("aarch64"),
         cross_template("arm", "v7", "gnueabihf"),
         cross_template("i686"),
-        hosts["macos"],
         hosts["macos"] | {"target": "aarch64-apple-darwin"},
         hosts["windows"],
         ]
