@@ -151,6 +151,7 @@ def host_template_zig(arch, subarch="", env="gnu", vendor="unknown", sys_os="lin
 
 
 build_envs = [
+        host_template_zig("i686", host_dict=hosts["linux-gnu-rhel"]),
         #hosts["linux-gnu-rhel"],
         #hosts["linux-gnu"],
         #hosts["macos"],
@@ -159,7 +160,6 @@ build_envs = [
         #cross_template("aarch64"),
         #cross_template("arm", "v7", "gnueabihf"),
         #cross_template("i686"),
-        cross_template("i686", host_dict=hosts["linux-gnu-rhel"]),
         #hosts["macos"] | {"target": "aarch64-apple-darwin"},
         ### musl ###
         #hosts["linux-musl"],
