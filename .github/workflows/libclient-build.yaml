@@ -7,7 +7,7 @@ on:
         description: The branch, tag or SHA to checkout for libsignal
         default: ''  # Use the latest commit from the default branch
   schedule:
-    - cron: '33 3 * * *'
+    - cron: '22 22 * * *'
 
 
 jobs:
