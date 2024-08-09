@@ -123,11 +123,11 @@ def host_template_zig(arch, subarch="", env="gnu", vendor="unknown", sys_os="lin
     if glibc_ver is not None:
         zig_target += f".{glibc_ver}"
     pkgs = ""
-    #if "64" not in arch:
-        #if "apt-get " in host_dict["install-cmd"]:
-            #pkgs += "gcc-multilib"
-        #elif "dnf " in host_dict["install-cmd"]:
-            #pkgs += "glibc-devel.i686"
+    if "64" not in arch:
+        if "apt-get " in host_dict["install-cmd"]:
+            pkgs += "gcc-multilib"
+        elif "dnf " in host_dict["install-cmd"]:
+            pkgs += "glibc-devel.i686"
     return host_dict | {
             "target": f"{arch}{subarch}-{vendor}-{sys_os}-{env}",
             "linker": "zcc",
