@@ -145,11 +145,46 @@ add_deb_repos() {
 }
 
 install_protobuf() {
-	VER=${1:-21.12}
+	VER=${PROTOBUF_VER:-25.4}
 	FNAME=protoc-${VER}-linux-x86_64.zip
 	curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${VER}/${FNAME}
 	unzip "$FNAME" -d /usr/local
 	protoc --version
+}
+
+install_rust () {
+	# Ref: https://github.com/rust-lang/docker-rust/blob/master/Dockerfile-slim.template
+	export RUSTUP_HOME=/usr/local/rustup
+	export CARGO_HOME=/usr/local/cargo
+	export PATH=/usr/local/cargo/bin:$PATH
+	echo "RUSTUP_HOME=/usr/local/rustup" >> "$GITHUB_ENV"
+	echo "CARGO_HOME=/usr/local/cargo" >> "$GITHUB_ENV"
+	echo "/usr/local/cargo/bin" >> "$GITHUB_PATH"
+	curl -LO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init
+	chmod +x rustup-init
+	./rustup-init -y --no-modify-path --profile minimal --default-toolchain nightly
+	rustc --version; cargo --version; rustup --version;
+}
+
+install_gh_cli () {
+	ver=${1:-2.54.0}
+	fbname=gh_${ver}_linux_amd64
+	fname=$fbname.tar.gz
+	curl -LO https://github.com/cli/cli/releases/download/v$ver/$fname
+	tar -xzf $fname
+	mv $fbname/bin/gh /usr/local/bin
+	gh --version
+}
+
+install_dependencies_deb () {
+	install_protobuf
+	install_gh_cli
+}
+
+install_dependencies_rhel () {
+	install_rust
+	install_protobuf
+	install_gh_cli
 }
 
 "$@"

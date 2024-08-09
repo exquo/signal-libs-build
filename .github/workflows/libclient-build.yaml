@@ -144,6 +144,14 @@ jobs:
         run: |
           sh -c "$INSTALL_CMD $PKGS"
 
+      - name: Run setup commands
+        if: ${{ matrix.build-env.setup-cmds }}
+        env:
+          SETUP_CMDS: ${{ matrix.build-env.setup-cmds }}
+          SETUP_ENV: ${{ matrix.build-env.setup-env }}
+        run: |
+          env -S "$SETUP_ENV" sh -c "$SETUP_CMDS"
+
       - name: Generate file names for the current matrix item
         id: filenames
         env:
@@ -176,24 +184,6 @@ jobs:
           linker = "$LINKER"
           EOF
 
-      - name: Setup rust cache
-        if: false   # Not using cache
-        # On macos-latest cache does not work properly:
-          # https://github.com/actions/cache/issues/403
-          # https://github.com/rust-lang/cargo/issues/8603
-          # https://github.com/Swatinem/rust-cache
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-rust
-        with:
-          path: |
-            ~/.cargo
-            ./target
-          key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-${{ matrix.lib.name }}-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-${{ matrix.lib.name }}-
-            ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.build-env.target }}-
-
       - name: Cargo build
         env:
           RUSTFLAGS: -C link-arg=-s  ${{ matrix.build-env.rust-flags }}
@@ -203,7 +193,7 @@ jobs:
           if [ -n "$TARGET" ]; then
             export CARGO_BUILD_TARGET=$TARGET
           fi
-          env $BUILD_ENV_VARS cargo build --release --verbose  $CARGO_FLAGS
+          env -S "$BUILD_ENV_VARS" cargo build --release --verbose  $CARGO_FLAGS
 
       - name: Inspect built file
         env:
