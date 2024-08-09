@@ -151,7 +151,7 @@ def host_template_zig(arch, subarch="", env="gnu", vendor="unknown", sys_os="lin
 
 
 build_envs = [
-        host_template_zig("i686")
+        host_template_zig("x86_64", glibc_ver="2.17")
         #hosts["linux-gnu-rhel"],
         #hosts["linux-gnu"],
         #hosts["macos"],
