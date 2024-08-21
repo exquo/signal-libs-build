@@ -59,9 +59,10 @@ hosts = hosts | {
                 },
         "macos": {
                 "runner": "macos-latest",
+                "triple": "aarch64-apple-darwin",
+                    # macos-latest is arm64: https://github.com/actions/runner-images
                 "lib-prefix": "lib",
                 "lib-suffix": ".dylib",
-                "triple": "x86_64-apple-darwin",
                 "install-cmd": "brew install",
                 "req-pkg": "protobuf",
             },
@@ -106,7 +107,8 @@ build_envs = [
         cross_template("aarch64"),
         cross_template("arm", "v7", "gnueabihf"),
         cross_template("i686"),
-        hosts["macos"] | {"target": "aarch64-apple-darwin"},
+        hosts["macos"],
+        hosts["macos"] | {"target": "x86_64-apple-darwin"},
         hosts["windows"],
         ]
 

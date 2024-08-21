@@ -34,10 +34,12 @@ This means that the resulting binaries can be used with confidence that they wer
 - `x86_64-linux-gnu`
 	Most desktop linuxes.
 	Supports `glibc` versions less recent than that required for the upstream releases, which are built on the latest Ubuntu (see [signal-cli#643](https://github.com/AsamK/signal-cli/issues/643)).
-- `aarch64-apple-darwin`
-	MacOS, ARM64.
 - `x86_64-pc-windows`
 	Windows, 64 bit.
+- `x86_64-apple-darwin`
+   MacOS, Intel 64 bit.
+- `aarch64-apple-darwin`
+	MacOS, ARM64.
 - `aarch64-linux-gnu`
 	Raspberry Pi 3,4; Pine A64; many SoC.
 - `armv7-linux-gnueabihf`
