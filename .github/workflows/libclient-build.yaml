@@ -204,7 +204,7 @@ jobs:
           readelf --arch-specific $FILENAME  || :
           ldd -v $FILENAME || ldd $FILENAME || :
           objdump -T $FILENAME | grep LIBC  || :
-          objdump -T $FILENAME  | grep LIBC | cut -d'_' -f2 | sort -V | tail -n1 | cut -d ' ' -f1 || :
+          readelf -V libsignal_jni.so | grep -o ' GLIBC_[^ ]*' | sort -V | tail -n 1 || :
           openssl sha256 $FILENAME
 
       - name: Create archive
