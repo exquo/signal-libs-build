@@ -10,11 +10,12 @@ A CI/CD workflow to automatically compile [libsignal](https://github.com/signala
 
 #### With signal-cli
 
-The compiled library files (`.so` / `.dylib` / `.dll`) can be incorporated into signal-cli according to the [instructions on its wiki](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal). For Linux, this amounts to swapping the `.so` files inside the `.jar` archives.
+The compiled library files (`.so` / `.dylib` / `.dll`) can be incorporated into signal-cli according to the [instructions on its wiki](https://github.com/AsamK/signal-cli/wiki/Provide-native-lib-for-libsignal).
 
-For example, for signal-cli v0.11.6 on ARM64, download `signal-cli-0.11.6-Linux.tar.gz` from [signal-cli's releases](https://github.com/AsamK/signal-cli/releases) and `libsignal_jni.so-v0.21.1-aarch64-unknown-linux-gnu.tar.gz` from [this repo's releases](/../../releases). Unpack downloaded files with `tar -xzf ….tar.gz`. Then replace the bundled `.so` object:
+For example, for signal-cli v0.13.7 on ARM64 Linux: download `signal-cli-0.13.7.tar.gz` from [signal-cli's releases](https://github.com/AsamK/signal-cli/releases) and `libsignal_jni.so-v0.58.0-aarch64-unknown-linux-gnu.tar.gz` from [this repo's releases](/../../releases). Unpack downloaded files with `tar -xzf ….tar.gz`. Then replace the library file:
 
-	zip -uj signal-cli-0.11.6/lib/libsignal-client-0.21.1.jar libsignal_jni.so
+	zip signal-cli-0.13.7/lib/libsignal-client-0.58.0.jar -d '*signal_jni*'
+	zip signal-cli-0.13.7/lib/libsignal-client-0.58.0.jar -uj libsignal_jni.so
 
 
 ### How it works
