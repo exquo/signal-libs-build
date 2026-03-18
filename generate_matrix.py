@@ -30,7 +30,7 @@ hosts = hosts | {
         "linux-gnu": hosts["linux"] | {
                 "container": "rust:bullseye",
                 "install-cmd": "apt-get update && apt-get install -y",
-                "req-pkg": "python3 unzip gcc g++ git clang libclang-dev cmake make",
+                "req-pkg": "python3 unzip gcc g++ git clang libclang-dev make",
                     # "clang and libclang are used by boring-sys's bindgen; otherwise we could use plain old gcc and g++"
                     # (libsignal-client/java/Dockerfile)
                 "setup-cmds": "bash ./util.sh install_dependencies_deb",

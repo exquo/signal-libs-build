@@ -144,6 +144,17 @@ add_deb_repos() {
 	#echo "deb http://archive.debian.org/debian buster-backports main" > /etc/apt/sources.list.d/buster-backports.list
 }
 
+install_cmake() {
+	# Installing `cmake` from `bullseye-backports`.
+	# Since libsignal v0.87.4, a newer version of cmake is required. The `cargo build` fails when run with Debian bullseye's regular cmake version:
+	# > CMake 3.22 or higher is required.  You are running version 3.18.4
+	# (cmake version in bullseye-backports is 3.25.1)
+	echo 'deb http://archive.debian.org/debian bullseye-backports main' > /etc/apt/sources.list.d/bullseye-backports.list
+	apt-get update
+	apt-get install -y --target-release=bullseye-backports cmake
+	cmake --version
+}
+
 install_protobuf() {
 	VER=${PROTOBUF_VER:-25.4}
 	FNAME=protoc-${VER}-linux-x86_64.zip
@@ -177,6 +188,7 @@ install_gh_cli () {
 }
 
 install_dependencies_deb () {
+	install_cmake
 	install_protobuf
 	install_gh_cli
 }
