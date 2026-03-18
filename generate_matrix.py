@@ -98,6 +98,7 @@ def cross_template(arch, subarch="", env="gnu", vendor="unknown", sys_os="linux"
                 f"CC={cc}",
                 f"CXX={cxx}",
                 f"CPATH=/usr/{arch}-{sys_os}-{env}/include",
+                "CFLAGS=-DOPENSSL_NO_ASM CXXFLAGS=-DOPENSSL_NO_ASM" if arch == 'i686' else '',
                 )),
             }
 
