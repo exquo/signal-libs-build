@@ -188,9 +188,9 @@ install_gh_cli () {
 }
 
 install_dependencies_deb () {
-	install_cmake
 	install_protobuf
 	install_gh_cli
+	#install_cmake
 }
 
 install_dependencies_rhel () {
