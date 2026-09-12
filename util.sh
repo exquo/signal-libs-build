@@ -156,7 +156,7 @@ install_cmake() {
 }
 
 install_protobuf() {
-	VER=${PROTOBUF_VER:-25.4}
+	VER=${PROTOBUF_VER:-33.6}
 	FNAME=protoc-${VER}-linux-x86_64.zip
 	curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${VER}/${FNAME}
 	unzip "$FNAME" -d /usr/local

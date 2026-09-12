@@ -34,18 +34,12 @@ hosts = hosts | {
                     # "clang and libclang are used by boring-sys's bindgen; otherwise we could use plain old gcc and g++"
                     # (libsignal-client/java/Dockerfile)
                 "setup-cmds": "bash ./util.sh install_dependencies_deb",
-                "setup-env": " ".join((
-                    "PROTOBUF_VER=25.4",
-                    )),
                 },
         "linux-gnu-rhel": hosts["linux"] | {
                 "container": "rockylinux:8",
                 "install-cmd": "dnf -y upgrade && dnf -y install",
                 "req-pkg": "file git python3 unzip xz gcc gcc-c++ make cmake clang clang-libs",
                 "setup-cmds": "bash ./util.sh install_dependencies_rhel",
-                "setup-env": " ".join((
-                    "PROTOBUF_VER=25.4",
-                    )),
                 },
         "linux-musl": hosts["linux"] | {
                 "triple": "x86_64-unknown-linux-musl",
